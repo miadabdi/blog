@@ -1,0 +1,32 @@
+version: '3.8'
+
+# For connection urls to the following instances, see
+# https://github.com/prisma/prisma/blob/main/TESTING.md#environment-variables
+services:
+  blog-db:
+    image: postgres:14
+    container_name: blog-db
+    restart: always
+    environment:
+      - POSTGRES_DB=blog
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - '5434:5432'
+    networks:
+      - local
+  blog-db_test:
+    image: postgres:14
+    container_name: blog-db_test
+    restart: always
+    environment:
+      - POSTGRES_DB=blog
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - '5435:5432'
+    networks:
+      - local
+
+networks:
+  local:
