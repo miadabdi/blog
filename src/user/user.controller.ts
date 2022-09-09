@@ -7,13 +7,16 @@ import {
   Patch,
   UseGuards,
 } from '@nestjs/common';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { User } from '@prisma/client';
 import { GetUser } from '../auth/decorators';
 import { JwtAuthGuard } from '../auth/guards';
 import { UpdateUserDto } from './dto';
 import { UserService } from './user.service';
 
-@Controller('user')
+@UseGuards(ThrottlerGuard)
+@Throttle(120, 60 * 10) // 120 auth requests for 10 minutes
+@Controller({ path: 'user', version: '1' })
 @UseGuards(JwtAuthGuard)
 export class UserController {
   constructor(private userService: UserService) {}
@@ -21,6 +24,7 @@ export class UserController {
   @HttpCode(HttpStatus.OK)
   @Get('me')
   getMe(@GetUser() user: User) {
+    delete user.password;
     return user;
   }
 

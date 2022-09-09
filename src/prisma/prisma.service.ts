@@ -1,9 +1,16 @@
-import { INestApplication, Injectable, OnModuleInit } from '@nestjs/common';
+import {
+  INestApplication,
+  Injectable,
+  Logger,
+  OnModuleInit,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaClient } from '@prisma/client';
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit {
+  private readonly logger = new Logger(PrismaService.name);
+
   constructor(configService: ConfigService) {
     super({
       datasources: {
@@ -16,6 +23,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
 
   async onModuleInit() {
     await this.$connect();
+    this.logger.log('Database connected');
   }
 
   async enableShutdownHooks(app: INestApplication) {
@@ -26,5 +34,6 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
 
   async cleanDB() {
     await this.$transaction([this.user.deleteMany()]);
+    this.logger.log('DB data cleaned');
   }
 }
