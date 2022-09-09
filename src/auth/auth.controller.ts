@@ -18,7 +18,7 @@ import { AuthDto } from './dto';
 @Throttle(10, 60 * 10) // 10 auth requests for 10 minutes
 @Controller({ path: 'auth', version: '1' })
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private readonly authService: AuthService) {}
 
   @HttpCode(HttpStatus.CREATED)
   @Post('signup')

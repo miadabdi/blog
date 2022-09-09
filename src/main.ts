@@ -4,6 +4,7 @@ import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import * as compression from 'compression';
 import * as cookieParser from 'cookie-parser';
 import helmet from 'helmet';
+import * as hpp from 'hpp';
 import { AppModule } from './app.module';
 import { API_PREFIX, LOG_LEVELS } from './common/constants';
 import { AllExceptionsFilter } from './common/exceptions';
@@ -24,6 +25,7 @@ async function bootstrap() {
     }),
   );
   app.use(cookieParser());
+  app.use(hpp());
 
   app.enableCors();
 

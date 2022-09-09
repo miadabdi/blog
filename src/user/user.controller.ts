@@ -9,8 +9,8 @@ import {
 } from '@nestjs/common';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { User } from '@prisma/client';
-import { GetUser } from '../auth/decorators';
-import { JwtAuthGuard } from '../auth/guards';
+import { GetUser } from '../common/decorators';
+import { JwtAuthGuard } from '../common/guards';
 import { UpdateUserDto } from './dto';
 import { UserService } from './user.service';
 
@@ -19,7 +19,7 @@ import { UserService } from './user.service';
 @Controller({ path: 'user', version: '1' })
 @UseGuards(JwtAuthGuard)
 export class UserController {
-  constructor(private userService: UserService) {}
+  constructor(private readonly userService: UserService) {}
 
   @HttpCode(HttpStatus.OK)
   @Get('me')
