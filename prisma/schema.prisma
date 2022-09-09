@@ -3,6 +3,7 @@
 
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["fullTextSearch"]
 }
 
 datasource db {
@@ -15,7 +16,7 @@ model User {
   createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
   updatedAt DateTime @db.Timestamptz(6) @updatedAt @map("updated_at")
 
-  email String @map("email")
+  email String @unique @map("email")
   password String @map("password")
 
   firstName String? @map("first_name")
