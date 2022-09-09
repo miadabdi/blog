@@ -15,8 +15,14 @@ async function bootstrap() {
     logger: LOG_LEVELS,
   });
 
+  const configService = app.get(ConfigService);
+
   app.use(helmet());
-  app.use(compression());
+  app.use(
+    compression({
+      threshold: configService.get<number>('COMPRESSION_THRESHOLD'), // number in bytes
+    }),
+  );
   app.use(cookieParser());
 
   app.enableCors();
@@ -38,8 +44,6 @@ async function bootstrap() {
 
   const { httpAdapter } = app.get(HttpAdapterHost);
   app.useGlobalFilters(new AllExceptionsFilter(httpAdapter));
-
-  const configService = app.get(ConfigService);
 
   const port = configService.get<number>('PORT');
   await app.listen(port);

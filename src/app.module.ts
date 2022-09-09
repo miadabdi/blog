@@ -27,6 +27,7 @@ import { UserModule } from './user/user.module';
         COOKIE_EXPIRES_IN: Joi.number().min(1).default(90),
         THROTTLE_TTL: Joi.number().min(1).default(60),
         THROTTLE_LIMIT: Joi.number().min(1).default(3600),
+        COMPRESSION_THRESHOLD: Joi.number().min(1024).max(100000).default(4096),
       }),
     }),
     ThrottlerModule.forRootAsync({
