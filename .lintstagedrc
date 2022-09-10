@@ -1,5 +1,6 @@
 {
 	"*.ts": [
+		"npm run check-types",
 		"prettier --write --list-different",
 		"eslint"
 	],
