@@ -1,10 +1,10 @@
 {
 	"name": "blog",
-	"version": "0.0.1",
-	"description": "",
-	"author": "",
-	"private": true,
-	"license": "UNLICENSED",
+	"version": "0.0.2",
+	"description": "Personal Blog",
+	"author": "Miad Abdi",
+	"private": false,
+	"license": "MIT",
 	"scripts": {
 		"prisma:studio:dev": "npx prisma studio --port 7777",
 		"prisma:deploy:dev": "prisma migrate deploy",
