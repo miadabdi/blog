@@ -34,7 +34,7 @@
 		"test:e2e:watch": "dotenv -e .env.test -- jest --watchAll --no-cache --config ./test/jest-e2e.json",
 		"prisma:studio:test": "dotenv -e .env.test -- npx prisma studio --port 7777",
 		"prepare": "husky install",
-		"check-types": "tsc",
+		"check-types": "tsc --dry",
 		"format": "npm run prettier --write",
 		"check-format": "npm run prettier --list-different",
 		"validate": "npm-run-all --parallel check-types check-format lint:no-fix"
@@ -60,11 +60,14 @@
 		"helmet": "^6.0.0",
 		"hpp": "^0.2.3",
 		"joi": "^17.6.0",
+		"nest-winston": "^1.7.0",
 		"passport": "^0.6.0",
 		"passport-jwt": "^4.0.0",
 		"reflect-metadata": "^0.1.13",
 		"rimraf": "^3.0.2",
-		"rxjs": "^7.2.0"
+		"rxjs": "^7.2.0",
+		"winston": "^3.8.2",
+		"winston-daily-rotate-file": "^4.7.1"
 	},
 	"devDependencies": {
 		"@commitlint/cli": "^17.1.2",
