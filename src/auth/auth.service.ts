@@ -1,9 +1,9 @@
 import {
-  ConflictException,
-  ForbiddenException,
-  Injectable,
-  InternalServerErrorException,
-  Logger,
+	ConflictException,
+	ForbiddenException,
+	Injectable,
+	InternalServerErrorException,
+	Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
@@ -16,84 +16,80 @@ import { AuthDto } from './dto';
 
 @Injectable()
 export class AuthService {
-  private readonly logger = new Logger(AuthService.name);
+	private readonly logger = new Logger(AuthService.name);
 
-  constructor(
-    private prismaService: PrismaService,
-    private jwtService: JwtService,
-    private configService: ConfigService,
-  ) {}
+	constructor(
+		private prismaService: PrismaService,
+		private jwtService: JwtService,
+		private configService: ConfigService,
+	) {}
 
-  async signUp(authDto: AuthDto) {
-    const hash = await argon.hash(authDto.password);
+	async signUp(authDto: AuthDto) {
+		const hash = await argon.hash(authDto.password);
 
-    try {
-      const user = await this.prismaService.user.create({
-        data: { email: authDto.email, password: hash },
-      });
-      delete user.password;
+		try {
+			const user = await this.prismaService.user.create({
+				data: { email: authDto.email, password: hash },
+			});
+			delete user.password;
 
-      return user;
-    } catch (error: unknown) {
-      if (error instanceof PrismaClientKnownRequestError) {
-        // The .code property can be accessed in a type-safe manner
-        if (error.code === 'P2002') {
-          throw new ConflictException(
-            'Email taken, a new user cannot be created with this email',
-          );
-        }
-      }
+			return user;
+		} catch (error: unknown) {
+			if (error instanceof PrismaClientKnownRequestError) {
+				// The .code property can be accessed in a type-safe manner
+				if (error.code === 'P2002') {
+					throw new ConflictException('Email taken, a new user cannot be created with this email');
+				}
+			}
 
-      if (error instanceof Error) {
-        this.logger.error(error.message, error.stack);
-      }
-      throw new InternalServerErrorException(
-        'Something went wrong, try again later',
-      );
-    }
-  }
+			if (error instanceof Error) {
+				this.logger.error(error.message, error.stack);
+			}
+			throw new InternalServerErrorException('Something went wrong, try again later');
+		}
+	}
 
-  async signIn(response: Response, authDto: AuthDto) {
-    const user = await this.prismaService.user.findFirst({
-      where: { email: authDto.email },
-    });
+	async signIn(response: Response, authDto: AuthDto) {
+		const user = await this.prismaService.user.findFirst({
+			where: { email: authDto.email },
+		});
 
-    if (!user) {
-      throw new ForbiddenException('Credentials is incorrect');
-    }
+		if (!user) {
+			throw new ForbiddenException('Credentials is incorrect');
+		}
 
-    const pwMatch = await argon.verify(user.password, authDto.password);
+		const pwMatch = await argon.verify(user.password, authDto.password);
 
-    if (!pwMatch) {
-      throw new ForbiddenException('Credentials is incorrect');
-    }
+		if (!pwMatch) {
+			throw new ForbiddenException('Credentials is incorrect');
+		}
 
-    delete user.password;
+		delete user.password;
 
-    const jwtCookie = await this.signToken(user.id, user.email);
-    const cookieExpiresIn = this.configService.get<number>('COOKIE_EXPIRES_IN');
+		const jwtCookie = await this.signToken(user.id, user.email);
+		const cookieExpiresIn = this.configService.get<number>('COOKIE_EXPIRES_IN');
 
-    response.cookie(JWT_COOKIE_NAME, jwtCookie, {
-      expires: new Date(new Date().getTime() + cookieExpiresIn * 1000),
-      sameSite: 'strict',
-      httpOnly: true,
-    });
-  }
+		response.cookie(JWT_COOKIE_NAME, jwtCookie, {
+			expires: new Date(new Date().getTime() + cookieExpiresIn * 1000),
+			sameSite: 'strict',
+			httpOnly: true,
+		});
+	}
 
-  async signToken(userId: number, email: string) {
-    const paylaod = {
-      sub: userId,
-      email,
-    };
+	async signToken(userId: number, email: string) {
+		const paylaod = {
+			sub: userId,
+			email,
+		};
 
-    const secret = this.configService.get<string>('JWT_SECRET');
-    const jwtExpiresIn = this.configService.get<string>('JWT_EXPIRES_IN');
+		const secret = this.configService.get<string>('JWT_SECRET');
+		const jwtExpiresIn = this.configService.get<string>('JWT_EXPIRES_IN');
 
-    const token = await this.jwtService.signAsync(paylaod, {
-      expiresIn: `${jwtExpiresIn}d`,
-      secret,
-    });
+		const token = await this.jwtService.signAsync(paylaod, {
+			expiresIn: `${jwtExpiresIn}d`,
+			secret,
+		});
 
-    return token;
-  }
+		return token;
+	}
 }

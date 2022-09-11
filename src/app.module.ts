@@ -2,11 +2,11 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import * as Joi from 'joi';
+
 import { AuthModule } from './auth/auth.module';
 import { NodeEnv } from './common/enums';
 import { PrismaModule } from './prisma/prisma.module';
 import { UserModule } from './user/user.module';
-console.log('djdjdj');
 
 @Module({
 	imports: [
