@@ -8,6 +8,7 @@
 	"scripts": {
 		"prisma:studio:dev": "npx prisma studio --port 7777",
 		"prisma:deploy:dev": "prisma migrate deploy",
+		"db:seed:dev": "npx prisma db seed",
 		"db:rm:dev": "sudo docker compose rm blog-db -f -s -v",
 		"db:up:dev": "sudo docker compose up blog-db -d",
 		"db:restart:dev": "npm run db:rm:dev && npm run db:up:dev && sleep 5 && npm run prisma:deploy:dev",
@@ -38,6 +39,9 @@
 		"format": "npm run prettier --write",
 		"check-format": "npm run prettier --list-different",
 		"validate": "npm-run-all --parallel check-types check-format lint:no-fix"
+	},
+	"prisma": {
+		"seed": "ts-node prisma/seed.ts"
 	},
 	"dependencies": {
 		"@nestjs-modules/mailer": "^1.8.1",
