@@ -22,5 +22,41 @@ model User {
   firstName String? @map("first_name")
   lastName String? @map("last_name")
 
+  posts Post[]
+
   @@map("users")
+}
+
+model Post {
+  id Int @id @default(autoincrement()) @map("id")
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @updatedAt @map("updated_at")
+
+  name String @map("name")
+  slug String @map("slug")
+  summary String @map("summary")
+  bodyObj Json @map("body_obj")
+
+  coverImageFileId Int? @map("cover_image_file_id") @unique
+  coverImageFile File? @relation(fields: [coverImageFileId], references: [id])
+  
+  authorId Int @map("author_id")
+  author User @relation(fields: [authorId], references: [id])
+
+  isPublished Boolean @default(false) @map("is_published")
+
+  @@map("posts")
+}
+
+model File {
+  id Int @id @default(autoincrement()) @map("id")
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @updatedAt @map("updated_at")
+
+	bucketName String @map("bucket_name")
+  path String @map("path")
+	mimetype String @map("mimetype")
+	sizeInByte Int @map("size_in_byte")
+
+  postCoverImage Post?
 }
