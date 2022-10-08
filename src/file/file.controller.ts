@@ -1,5 +1,6 @@
 import { Controller, Post, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { SharpPipe } from '../common/pipes/sharp-pipe.pipe';
 import { FileService } from './file.service';
 
 @Controller('file')
@@ -8,7 +9,7 @@ export class FileController {
 
 	@Post('upload-image')
 	@UseInterceptors(FileInterceptor('image'))
-	async uploadImage(@UploadedFile() image: Express.Multer.File) {
+	async uploadImage(@UploadedFile(SharpPipe) image: Express.Multer.File) {
 		return this.fileService.uploadImage(image);
 	}
 }
