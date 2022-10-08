@@ -80,6 +80,7 @@
 		"reflect-metadata": "^0.1.13",
 		"rimraf": "^3.0.2",
 		"rxjs": "^7.2.0",
+		"sharp": "^0.31.1",
 		"slugify": "^1.6.5",
 		"winston": "^3.8.2",
 		"winston-daily-rotate-file": "^4.7.1"
@@ -98,6 +99,7 @@
 		"@types/node": "^16.11.58",
 		"@types/nodemailer": "^6.4.5",
 		"@types/passport-jwt": "^3.0.6",
+		"@types/sharp": "^0.31.0",
 		"@types/supertest": "^2.0.11",
 		"@typescript-eslint/eslint-plugin": "^5.0.0",
 		"@typescript-eslint/parser": "^5.0.0",
