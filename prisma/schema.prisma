@@ -59,4 +59,6 @@ model File {
 	sizeInByte Int @map("size_in_byte")
 
   postCoverImage Post?
+
+  @@map("files")
 }
