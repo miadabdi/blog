@@ -22,6 +22,8 @@ model User {
   firstName String? @map("first_name")
   lastName String? @map("last_name")
 
+  isAdmin Boolean @default(false) @map("is_admin")
+
   posts Post[]
 
   @@map("users")
