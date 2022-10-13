@@ -1,12 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  HttpCode,
-  HttpStatus,
-  Patch,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Patch, UseGuards } from '@nestjs/common';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { User } from '@prisma/client';
 import { GetUser } from '../common/decorators';
@@ -19,18 +11,18 @@ import { UserService } from './user.service';
 @Controller({ path: 'user', version: '1' })
 @UseGuards(JwtAuthGuard)
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+	constructor(private readonly userService: UserService) {}
 
-  @HttpCode(HttpStatus.OK)
-  @Get('me')
-  getMe(@GetUser() user: User) {
-    delete user.password;
-    return user;
-  }
+	@HttpCode(HttpStatus.OK)
+	@Get('me')
+	getMe(@GetUser() user: User) {
+		delete user.password;
+		return user;
+	}
 
-  @HttpCode(HttpStatus.OK)
-  @Patch('update-me')
-  updateUser(@Body() updateUserDto: UpdateUserDto, @GetUser() user: User) {
-    return this.userService.updateUser(updateUserDto, user);
-  }
+	@HttpCode(HttpStatus.OK)
+	@Patch('update-me')
+	updateUser(@Body() updateUserDto: UpdateUserDto, @GetUser() user: User) {
+		return this.userService.updateUser(updateUserDto, user);
+	}
 }
