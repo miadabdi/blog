@@ -31,13 +31,20 @@ export class CaslAbilityFactory {
 			can(CaslAction.Manage, 'all'); // read-write access to everything
 		} else {
 			can(CaslAction.Read, 'all'); // read-only access to everything
-			cannot(CaslAction.Create, 'all').because('Only admins can create');
-			cannot(CaslAction.Update, 'all').because('Only admins can update');
-			cannot(CaslAction.Delete, 'all').because('Only admins can delete');
-		}
 
-		// can(CaslAction.Update, 'Post', { authorId: user.id });
-		// cannot(CaslAction.Delete, 'Post', { isPublished: true });
+			can(CaslAction.Update, 'Post');
+			cannot(CaslAction.Update, 'Post', { authorId: { not: user.id } }).because(
+				`You cannot update posts you don't own`,
+			);
+
+			can(CaslAction.Delete, 'Post');
+			cannot(CaslAction.Delete, 'Post', { authorId: { not: user.id } }).because(
+				`You cannot delete posts you don't own`,
+			);
+			cannot(CaslAction.Delete, 'Post', { isPublished: true }).because(
+				'Published posts can only be deleted by admins',
+			);
+		}
 
 		// return build({
 		// 	// Read https://casl.js.org/v5/en/guide/subject-type-detection#use-classes-as-subject-types for details

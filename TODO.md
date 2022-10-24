@@ -5,7 +5,6 @@ This is my personal blog.
 ### Todo
 
 - [ ] setup CSRF protection
-- [ ] setup permission-based authorization
 - [ ] complete tests
 - [ ] setup OpenApi V3
 - [ ] setup pagination
@@ -17,3 +16,4 @@ This is my personal blog.
 
 - [x] setup smtp mail sender
 - [x] setup minio object storage, and its corresponding module
+- [x] setup permission-based authorization - Casl
