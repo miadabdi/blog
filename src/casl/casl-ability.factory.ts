@@ -1,7 +1,7 @@
 import { AbilityBuilder, AbilityClass } from '@casl/ability';
 import { PrismaAbility, Subjects } from '@casl/prisma';
 import { Injectable } from '@nestjs/common';
-import { Post, User } from '@prisma/client';
+import { Comment, Post, User } from '@prisma/client';
 
 export enum CaslAction {
 	Manage = 'manage',
@@ -17,6 +17,7 @@ type AppAbility = PrismaAbility<
 		Subjects<{
 			User: User;
 			Post: Post;
+			Comment: Comment;
 		}>,
 	]
 >;
@@ -43,6 +44,16 @@ export class CaslAbilityFactory {
 			);
 			cannot(CaslAction.Delete, 'Post', { isPublished: true }).because(
 				'Published posts can only be deleted by admins',
+			);
+
+			can(CaslAction.Update, 'Comment');
+			cannot(CaslAction.Update, 'Comment', { authorId: { not: user.id } }).because(
+				`You cannot update comments you don't own`,
+			);
+
+			can(CaslAction.Delete, 'Comment');
+			cannot(CaslAction.Delete, 'Comment', { authorId: { not: user.id } }).because(
+				`You cannot delete comments you don't own`,
 			);
 		}
 
