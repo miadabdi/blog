@@ -25,6 +25,7 @@ model User {
   isAdmin Boolean @default(false) @map("is_admin")
 
   posts Post[]
+  comments Comment[]
 
   @@map("users")
 }
@@ -47,6 +48,8 @@ model Post {
 
   isPublished Boolean @default(false) @map("is_published")
 
+  comments Comment[]
+
   @@map("posts")
 }
 
@@ -63,4 +66,25 @@ model File {
   postCoverImage Post?
 
   @@map("files")
+}
+
+model Comment {
+  id Int @id @default(autoincrement()) @map("id")
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @updatedAt @map("updated_at")
+
+  content String @map("content")
+
+  authorId Int @map("author_id")
+  author User @relation(fields: [authorId], references: [id])
+
+  postId Int @map("post_id")
+  post Post @relation(fields: [postId], references: [id])
+
+  replyTo Int? @map("reply_to")
+  parent Comment? @relation(fields: [replyTo], references: [id], name: "replies")
+
+  replies Comment[] @relation(name: "replies")
+
+  @@map("comments")
 }
