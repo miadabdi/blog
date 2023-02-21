@@ -1,8 +1,15 @@
 import { ForbiddenError, subject } from '@casl/ability';
-import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+	BadRequestException,
+	ForbiddenException,
+	Injectable,
+	Logger,
+	NotFoundException,
+} from '@nestjs/common';
 import { User } from '@prisma/client';
 import { CaslAbilityFactory, CaslAction } from '../casl/casl-ability.factory';
 import { PrismaService } from '../prisma/prisma.service';
+import { GetAllCommentsOfPost } from './dto/get-all-comments-by-post.dto';
 import { CreateCommentDto, DeleteCommentDto, UpdateCommentDto } from './dto/index';
 
 @Injectable()
@@ -18,6 +25,13 @@ export class CommentService {
 		} catch (err: any) {
 			throw new ForbiddenException(err.message);
 		}
+
+		const post = await this.prismaService.post.findUnique({ where: { id: createCommentDto.postId } });
+		if (!post) {
+			throw new BadRequestException(`Post with id ${createCommentDto.postId} not found`);
+		}
+
+		createCommentDto.authorId = user.id;
 
 		const comment = await this.prismaService.comment.create({
 			data: {
@@ -56,6 +70,10 @@ export class CommentService {
 
 	getAllComments() {
 		return this.prismaService.comment.findMany();
+	}
+
+	getAllCommentsOfPost(getAllCommentsOfPost: GetAllCommentsOfPost) {
+		return this.prismaService.comment.findMany({ where: { postId: getAllCommentsOfPost.postId } });
 	}
 
 	async deleteComment(deleteCommentDto: DeleteCommentDto, user: User) {

@@ -14,6 +14,7 @@ import { User } from '@prisma/client';
 import { GetUser } from '../common/decorators';
 import { JwtAuthGuard } from '../common/guards';
 import { CommentService } from './comment.service';
+import { GetAllCommentsOfPost } from './dto/get-all-comments-by-post.dto';
 import { CreateCommentDto, DeleteCommentDto, UpdateCommentDto } from './dto/index';
 
 @Controller('comment')
@@ -35,6 +36,11 @@ export class CommentController {
 	@Get()
 	getAllComments() {
 		return this.commentService.getAllComments();
+	}
+
+	@Get('by-post')
+	getAllCommentsOfPost(@Query() getAllCommentsOfPost: GetAllCommentsOfPost) {
+		return this.commentService.getAllCommentsOfPost(getAllCommentsOfPost);
 	}
 
 	@HttpCode(HttpStatus.NO_CONTENT)

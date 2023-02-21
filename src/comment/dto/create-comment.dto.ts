@@ -6,9 +6,7 @@ export class CreateCommentDto {
 	@Length(3, 500)
 	content: string;
 
-	@IsInt()
-	@Type(() => Number)
-	authorId: number;
+	authorId?: number;
 
 	@IsInt()
 	@Type(() => Number)
