@@ -1,6 +1,7 @@
 import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpAdapterHost, NestFactory } from '@nestjs/core';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as compression from 'compression';
 import * as cookieParser from 'cookie-parser';
 import helmet from 'helmet';
@@ -53,5 +54,14 @@ async function bootstrap() {
 
 	const prismaService = app.get(PrismaService);
 	await prismaService.enableShutdownHooks(app);
+
+	const config = new DocumentBuilder()
+		.setTitle('Blog Apis')
+		.setDescription('Introducing all APIs of blog')
+		.setVersion('1.0')
+		.addTag('blog')
+		.build();
+	const document = SwaggerModule.createDocument(app, config);
+	SwaggerModule.setup('api', app, document);
 }
 bootstrap();
