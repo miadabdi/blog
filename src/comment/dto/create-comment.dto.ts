@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsInt, IsNotEmpty, Length } from 'class-validator';
+import { IsInt, IsNotEmpty, IsOptional, Length } from 'class-validator';
 
 export class CreateCommentDto {
 	@IsNotEmpty()
@@ -11,4 +11,9 @@ export class CreateCommentDto {
 	@IsInt()
 	@Type(() => Number)
 	postId: number;
+
+	@IsOptional()
+	@IsInt()
+	@Type(() => Number)
+	replyTo: number;
 }

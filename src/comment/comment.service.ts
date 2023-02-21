@@ -42,6 +42,13 @@ export class CommentService {
 				post: {
 					connect: { id: createCommentDto.postId },
 				},
+				...(createCommentDto.replyTo
+					? {
+							parent: {
+								connect: { id: createCommentDto.replyTo },
+							},
+					  }
+					: {}),
 			},
 		});
 
