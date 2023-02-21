@@ -70,7 +70,7 @@ export class AuthService {
 		const cookieExpiresIn = this.configService.get<number>('COOKIE_EXPIRES_IN');
 
 		response.cookie(JWT_COOKIE_NAME, jwtCookie, {
-			expires: new Date(new Date().getTime() + cookieExpiresIn * 1000),
+			expires: new Date(new Date().getTime() + cookieExpiresIn * 1000 * 60 * 60 * 24),
 			sameSite: 'strict',
 			httpOnly: true,
 		});
