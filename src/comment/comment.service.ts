@@ -16,7 +16,10 @@ import { CreateCommentDto, DeleteCommentDto, UpdateCommentDto } from './dto/inde
 export class CommentService {
 	private logger = new Logger(CommentService.name);
 
-	constructor(private prismaService: PrismaService, private caslAbilityFactory: CaslAbilityFactory) {}
+	constructor(
+		private prismaService: PrismaService,
+		private caslAbilityFactory: CaslAbilityFactory,
+	) {}
 
 	async createComment(createCommentDto: CreateCommentDto, user: User) {
 		const ability = this.caslAbilityFactory.createForUser(user);
@@ -47,7 +50,7 @@ export class CommentService {
 							parent: {
 								connect: { id: createCommentDto.replyTo },
 							},
-					  }
+						}
 					: {}),
 			},
 		});

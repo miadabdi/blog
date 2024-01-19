@@ -7,7 +7,10 @@ import { PrismaService } from '../prisma/prisma.service';
 export class FileService {
 	private logger = new Logger(FileService.name);
 
-	constructor(private minioClientService: MinioClientService, private prismaService: PrismaService) {}
+	constructor(
+		private minioClientService: MinioClientService,
+		private prismaService: PrismaService,
+	) {}
 
 	async upload(file: Express.Multer.File, directory: string, bucketName: BUCKET_NAMES_TYPE) {
 		const result = await this.minioClientService.putObject(file, directory, bucketName);

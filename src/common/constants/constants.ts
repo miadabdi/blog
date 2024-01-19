@@ -57,4 +57,4 @@ export const BUCKETS = [
 	},
 ] as const;
 export const BUCKET_NAMES = BUCKETS.map((bucket) => bucket.name);
-export type BUCKET_NAMES_TYPE = typeof BUCKET_NAMES[0];
+export type BUCKET_NAMES_TYPE = (typeof BUCKET_NAMES)[0];

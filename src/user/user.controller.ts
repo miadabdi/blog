@@ -7,7 +7,7 @@ import { UpdateUserDto } from './dto';
 import { UserService } from './user.service';
 
 @UseGuards(ThrottlerGuard)
-@Throttle(120, 60 * 10) // 120 auth requests for 10 minutes
+@Throttle({ default: { limit: 120, ttl: 60 * 10 } }) // 120 auth requests for 10 minutes
 @Controller({ path: 'user', version: '1' })
 @UseGuards(JwtAuthGuard)
 export class UserController {

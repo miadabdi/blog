@@ -12,7 +12,10 @@ import { UpdatePostDto } from './dto/update-post.dto';
 export class PostService {
 	private logger = new Logger(PostService.name);
 
-	constructor(private prismaService: PrismaService, private caslAbilityFactory: CaslAbilityFactory) {}
+	constructor(
+		private prismaService: PrismaService,
+		private caslAbilityFactory: CaslAbilityFactory,
+	) {}
 
 	async createPost(createPostDto: CreatePostDto, user: User) {
 		const ability = this.caslAbilityFactory.createForUser(user);
@@ -36,7 +39,7 @@ export class PostService {
 							coverImageFile: {
 								connect: { id: createPostDto.coverImageFileId },
 							},
-					  }
+						}
 					: {}),
 			},
 		});

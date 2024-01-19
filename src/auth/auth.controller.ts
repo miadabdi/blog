@@ -6,7 +6,7 @@ import { AuthService } from './auth.service';
 import { AuthDto } from './dto';
 
 @UseGuards(ThrottlerGuard)
-@Throttle(10, 60 * 10) // 10 auth requests for 10 minutes
+@Throttle({ default: { limit: 10, ttl: 60 * 10 } }) // 10 auth requests for 10 minutes
 @Controller({ path: 'auth', version: '1' })
 export class AuthController {
 	constructor(private readonly authService: AuthService) {}

@@ -53,7 +53,10 @@ async function bootstrap() {
 	await app.listen(port);
 
 	const prismaService = app.get(PrismaService);
-	await prismaService.enableShutdownHooks(app);
+	prismaService.enableShutdownHooks(app);
+	app.enableShutdownHooks();
+
+	// await prismaService.enableShutdownHooks(app);
 
 	const config = new DocumentBuilder()
 		.setTitle('Blog Apis')
