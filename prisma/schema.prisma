@@ -17,7 +17,7 @@ model User {
   createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
   updatedAt DateTime @db.Timestamptz(6) @updatedAt @map("updated_at")
 
-  email String @unique @map("email")
+  email String @unique @map("email") 
   password String @map("password")
 
   firstName String? @map("first_name")
@@ -29,6 +29,7 @@ model User {
   comments Comment[]
 
   @@map("users")
+  @@index([email], type: BTree)
 }
 
 model Post {
@@ -52,6 +53,7 @@ model Post {
   comments Comment[]
 
   @@map("posts")
+  @@index([slug], type: BTree)
 }
 
 model File {
@@ -88,4 +90,5 @@ model Comment {
   replies Comment[] @relation(name: "replies")
 
   @@map("comments")
+  @@index([postId], type: BTree)
 }

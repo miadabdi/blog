@@ -51,7 +51,7 @@ export class AuthService {
 
 	async signIn(response: Response, authDto: AuthDto) {
 		const user = await this.prismaService.user.findFirst({
-			where: { email: authDto.email },
+			where: { email: { equals: authDto.email, mode: 'insensitive' } },
 		});
 
 		if (!user) {
