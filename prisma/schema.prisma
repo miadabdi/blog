@@ -51,6 +51,8 @@ model Post {
   isPublished Boolean @default(false) @map("is_published")
 
   comments Comment[]
+  categories CategoriesOnPosts[]
+  tags TagsOnPosts[]
 
   @@map("posts")
   @@index([slug], type: BTree)
@@ -104,5 +106,43 @@ model Category {
   parent Category? @relation("CategoryParentChild", fields: [parentId], references: [id])
   children Category[] @relation("CategoryParentChild")
 
+  posts CategoriesOnPosts[]
+
   @@map("categories")
+}
+
+model CategoriesOnPosts {
+  post       Post     @relation(fields: [postId], references: [id])
+  postId     Int // relation scalar field (used in the `@relation` attribute above)
+  category   Category @relation(fields: [categoryId], references: [id])
+  categoryId Int // relation scalar field (used in the `@relation` attribute above)
+
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @updatedAt @map("updated_at")
+
+  @@id([postId, categoryId])
+}
+
+model Tag {
+  id Int @id @default(autoincrement()) @map("id")
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @updatedAt @map("updated_at")
+
+  name String @map("name")
+
+  posts TagsOnPosts[]
+
+  @@map("tags")
+}
+
+model TagsOnPosts {
+  post       Post     @relation(fields: [postId], references: [id])
+  postId     Int // relation scalar field (used in the `@relation` attribute above)
+  tag   Tag @relation(fields: [tagId], references: [id])
+  tagId Int // relation scalar field (used in the `@relation` attribute above)
+
+  createdAt DateTime @db.Timestamptz(6) @default(now()) @map("created_at")
+  updatedAt DateTime @db.Timestamptz(6) @updatedAt @map("updated_at")
+
+  @@id([postId, tagId])
 }
