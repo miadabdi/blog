@@ -34,6 +34,15 @@ export class PostService {
 				author: {
 					connect: { id: user.id },
 				},
+				categories: {
+					create: createPostDto.categories.map((categoryId) => {
+						return {
+							category: {
+								connect: { id: categoryId },
+							},
+						};
+					}),
+				},
 				...(typeof createPostDto.coverImageFileId === 'number'
 					? {
 							coverImageFile: {
@@ -41,6 +50,13 @@ export class PostService {
 							},
 						}
 					: {}),
+			},
+			include: {
+				categories: {
+					include: {
+						category: true,
+					},
+				},
 			},
 		});
 
@@ -61,7 +77,43 @@ export class PostService {
 
 		const updatedPost = await this.prismaService.post.update({
 			where: { id: updatePostDto.id },
-			data: updatePostDto,
+			data: {
+				name: updatePostDto.name,
+				slug: updatePostDto.slug,
+				bodyObj: updatePostDto.bodyObj,
+				summary: updatePostDto.summary,
+				categories: {
+					connectOrCreate: updatePostDto.categories.map((categoryId) => {
+						return {
+							where: {
+								postId_categoryId: {
+									categoryId: categoryId,
+									postId: updatePostDto.id,
+								},
+							},
+							create: {
+								category: {
+									connect: { id: categoryId },
+								},
+							},
+						};
+					}),
+				},
+				...(typeof updatePostDto.coverImageFileId === 'number'
+					? {
+							coverImageFile: {
+								connect: { id: updatePostDto.coverImageFileId },
+							},
+						}
+					: {}),
+			},
+			include: {
+				categories: {
+					include: {
+						category: true,
+					},
+				},
+			},
 		});
 
 		return updatedPost;
@@ -69,14 +121,27 @@ export class PostService {
 
 	async getPostBySlug(getPostBySlugDto: GetPostBySlugDto) {
 		try {
-			return await this.prismaService.post.findFirstOrThrow({ where: { slug: getPostBySlugDto.slug } });
+			return await this.prismaService.post.findFirstOrThrow({
+				where: { slug: getPostBySlugDto.slug },
+				include: {
+					categories: {
+						include: { category: true },
+					},
+				},
+			});
 		} catch (err) {
 			throw new NotFoundException('No post with this slug found');
 		}
 	}
 
 	getAllPosts() {
-		return this.prismaService.post.findMany();
+		return this.prismaService.post.findMany({
+			include: {
+				categories: {
+					include: { category: true },
+				},
+			},
+		});
 	}
 
 	async deletePost(deletePostDto: DeletePostDto, user: User) {

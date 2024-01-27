@@ -1,6 +1,8 @@
 import { Expose, Transform, TransformFnParams, Type } from 'class-transformer';
 import {
 	Allow,
+	ArrayNotEmpty,
+	IsArray,
 	IsInt,
 	IsNotEmpty,
 	IsNotEmptyObject,
@@ -55,4 +57,10 @@ export class CreatePostDto {
 	@IsInt()
 	@Type(() => Number)
 	coverImageFileId?: number;
+
+	@IsArray()
+	@ArrayNotEmpty()
+	@IsInt({ each: true })
+	@Type(() => Number)
+	categories: number[];
 }
