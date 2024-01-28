@@ -121,6 +121,7 @@ model CategoriesOnPosts {
   updatedAt DateTime @db.Timestamptz(6) @updatedAt @map("updated_at")
 
   @@id([postId, categoryId])
+  @@map("categories_on_posts")
 }
 
 model Tag {
@@ -145,4 +146,5 @@ model TagsOnPosts {
   updatedAt DateTime @db.Timestamptz(6) @updatedAt @map("updated_at")
 
   @@id([postId, tagId])
+  @@map("tags_on_posts")
 }
