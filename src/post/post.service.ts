@@ -43,6 +43,15 @@ export class PostService {
 						};
 					}),
 				},
+				tags: {
+					create: createPostDto.tags.map((tagId) => {
+						return {
+							tag: {
+								connect: { id: tagId },
+							},
+						};
+					}),
+				},
 				...(typeof createPostDto.coverImageFileId === 'number'
 					? {
 							coverImageFile: {
@@ -55,6 +64,11 @@ export class PostService {
 				categories: {
 					include: {
 						category: true,
+					},
+				},
+				tags: {
+					include: {
+						tag: true,
 					},
 				},
 			},
@@ -99,6 +113,23 @@ export class PostService {
 						};
 					}),
 				},
+				tags: {
+					connectOrCreate: updatePostDto.tags.map((tagId) => {
+						return {
+							where: {
+								postId_tagId: {
+									tagId: tagId,
+									postId: updatePostDto.id,
+								},
+							},
+							create: {
+								tag: {
+									connect: { id: tagId },
+								},
+							},
+						};
+					}),
+				},
 				...(typeof updatePostDto.coverImageFileId === 'number'
 					? {
 							coverImageFile: {
@@ -111,6 +142,11 @@ export class PostService {
 				categories: {
 					include: {
 						category: true,
+					},
+				},
+				tags: {
+					include: {
+						tag: true,
 					},
 				},
 			},
@@ -127,6 +163,9 @@ export class PostService {
 					categories: {
 						include: { category: true },
 					},
+					tags: {
+						include: { tag: true },
+					},
 				},
 			});
 		} catch (err) {
@@ -139,6 +178,9 @@ export class PostService {
 			include: {
 				categories: {
 					include: { category: true },
+				},
+				tags: {
+					include: { tag: true },
 				},
 			},
 		});

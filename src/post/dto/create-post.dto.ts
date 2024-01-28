@@ -63,4 +63,10 @@ export class CreatePostDto {
 	@IsInt({ each: true })
 	@Type(() => Number)
 	categories: number[];
+
+	@IsArray()
+	@ArrayNotEmpty()
+	@IsInt({ each: true })
+	@Type(() => Number)
+	tags: number[];
 }
