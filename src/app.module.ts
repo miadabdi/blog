@@ -10,6 +10,7 @@ import { MailModule } from './mail/mail.module';
 import { MinioClientModule } from './minio-client/minio-client.module';
 import { PostModule } from './post/post.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { TagModule } from './tag/tag.module';
 import { UserModule } from './user/user.module';
 
 @Module({
@@ -26,6 +27,7 @@ import { UserModule } from './user/user.module';
 		FileModule,
 		CommentModule,
 		CategoryModule,
+		TagModule,
 	],
 	controllers: [],
 	providers: [],

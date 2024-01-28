@@ -1,7 +1,7 @@
 import { AbilityBuilder, AbilityClass } from '@casl/ability';
 import { PrismaAbility, Subjects } from '@casl/prisma';
 import { Injectable } from '@nestjs/common';
-import { Category, Comment, Post, User } from '@prisma/client';
+import { Category, Comment, Post, Tag, User } from '@prisma/client';
 
 export enum CaslAction {
 	Manage = 'manage',
@@ -19,6 +19,7 @@ type AppAbility = PrismaAbility<
 			Post: Post;
 			Comment: Comment;
 			Category: Category;
+			Tag: Tag;
 		}>,
 	]
 >;
@@ -37,6 +38,10 @@ export class CaslAbilityFactory {
 			cannot(CaslAction.Create, 'Category').because('Only admins can create categories');
 			cannot(CaslAction.Update, 'Category').because('Only admins can update categories');
 			cannot(CaslAction.Delete, 'Category').because('Only admins can delete categories');
+
+			cannot(CaslAction.Create, 'Tag').because('Only admins can create tags');
+			cannot(CaslAction.Update, 'Tag').because('Only admins can update tags');
+			cannot(CaslAction.Delete, 'Tag').because('Only admins can delete tags');
 
 			can(CaslAction.Update, 'Post');
 			cannot(CaslAction.Update, 'Post', { authorId: { not: user.id } }).because(

@@ -1,0 +1,88 @@
+import { ForbiddenError } from '@casl/ability';
+import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { User } from '@prisma/client';
+import { CaslAbilityFactory, CaslAction } from '../casl/casl-ability.factory';
+import { PrismaService } from '../prisma/prisma.service';
+import { CreateTagDto, DeleteTagDto, GetTagDto, UpdateTagDto } from './dto';
+
+@Injectable()
+export class TagService {
+	private readonly logger = new Logger(TagService.name);
+
+	constructor(
+		private prismaService: PrismaService,
+		private caslAbilityFactory: CaslAbilityFactory,
+	) {}
+
+	async createTag(createTagDto: CreateTagDto, user: User) {
+		const ability = this.caslAbilityFactory.createForUser(user);
+		try {
+			ForbiddenError.from(ability).throwUnlessCan(CaslAction.Create, 'Tag');
+		} catch (err: any) {
+			throw new ForbiddenException(err.message);
+		}
+
+		const tag = await this.prismaService.tag.create({
+			data: {
+				name: createTagDto.name,
+			},
+		});
+
+		return tag;
+	}
+
+	async updateTag(updateTagDto: UpdateTagDto, user: User) {
+		const ability = this.caslAbilityFactory.createForUser(user);
+		try {
+			ForbiddenError.from(ability).throwUnlessCan(CaslAction.Update, 'Tag');
+		} catch (err: any) {
+			throw new ForbiddenException(err.message);
+		}
+
+		const tag = await this.prismaService.tag.findUnique({ where: { id: updateTagDto.id } });
+
+		if (!tag) throw new NotFoundException('Tag not found');
+
+		const updatedTag = await this.prismaService.tag.update({
+			where: { id: updateTagDto.id },
+			data: updateTagDto,
+		});
+
+		return updatedTag;
+	}
+
+	async deleteTag(deleteTagDto: DeleteTagDto, user: User) {
+		const ability = this.caslAbilityFactory.createForUser(user);
+		try {
+			ForbiddenError.from(ability).throwUnlessCan(CaslAction.Delete, 'Tag');
+		} catch (err: any) {
+			throw new ForbiddenException(err.message);
+		}
+
+		const tag = await this.prismaService.tag.findUnique({ where: { id: deleteTagDto.id } });
+
+		if (!tag) throw new NotFoundException('Tag not found');
+
+		await this.prismaService.tag.delete({
+			where: { id: deleteTagDto.id },
+		});
+
+		return 'ok';
+	}
+
+	async getTag(getTagDto: GetTagDto) {
+		const tags = await this.prismaService.tag.findMany({
+			where: {
+				...(typeof getTagDto.name === 'number'
+					? {
+							name: {
+								contains: getTagDto.name,
+							},
+						}
+					: {}),
+			},
+		});
+
+		return tags;
+	}
+}
