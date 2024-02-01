@@ -9,8 +9,9 @@ import * as hpp from 'hpp';
 import { AppModule } from './app.module';
 import { API_PREFIX } from './common/constants';
 import { AllExceptionsFilter } from './common/exceptions';
+import { PrismaClientExceptionFilter } from './common/exceptions/prisma-known-exceptions.filter';
 import { LoggingInterceptor, TimeoutInterceptor } from './common/interceptors';
-import { PrismaService } from './prisma/prisma.service';
+import { PRISMA_INJECTION_TOKEN } from './prisma/prisma.module';
 import { logger } from './winston';
 
 async function bootstrap() {
@@ -47,12 +48,13 @@ async function bootstrap() {
 	app.useGlobalInterceptors(new LoggingInterceptor(), new TimeoutInterceptor());
 
 	const { httpAdapter } = app.get(HttpAdapterHost);
+	app.useGlobalFilters(new PrismaClientExceptionFilter(httpAdapter));
 	app.useGlobalFilters(new AllExceptionsFilter(httpAdapter));
 
 	const port = configService.get<number>('PORT');
 	await app.listen(port);
 
-	const prismaService = app.get(PrismaService);
+	const prismaService = app.get(PRISMA_INJECTION_TOKEN);
 	prismaService.enableShutdownHooks(app);
 	app.enableShutdownHooks();
 
