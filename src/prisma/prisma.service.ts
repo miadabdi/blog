@@ -2,15 +2,45 @@ import { INestApplication, Injectable, Logger, OnModuleInit } from '@nestjs/comm
 import { ConfigService } from '@nestjs/config';
 import { PrismaClient } from '@prisma/client';
 
+export type PrismaService = ReturnType<BasePrismaService['withExtensions']>;
+const queryLogger = new Logger('QueryLogger');
+
 @Injectable()
-export class PrismaService extends PrismaClient implements OnModuleInit {
-	private readonly logger = new Logger(PrismaService.name);
+export class BasePrismaService extends PrismaClient implements OnModuleInit {
+	private readonly logger = new Logger(BasePrismaService.name);
 
 	constructor(configService: ConfigService) {
 		super({
 			datasources: {
 				db: {
 					url: configService.get<string>('DATABASE_URL'),
+				},
+			},
+		});
+	}
+
+	withExtensions() {
+		return this.$extends({
+			query: {
+				$allModels: {
+					async $allOperations({ operation, model, args, query }) {
+						const start = performance.now();
+						const result = await query(args);
+						const end = performance.now();
+						const time = end - start;
+						queryLogger.debug(`${model}.${operation} took ${time.toFixed(0)} ms`);
+						return result;
+					},
+				},
+			},
+			result: {
+				user: {
+					fullName: {
+						needs: { firstName: true, lastName: true },
+						compute(user) {
+							return `${user.firstName} ${user.lastName}`;
+						},
+					},
 				},
 			},
 		});

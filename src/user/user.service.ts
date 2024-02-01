@@ -1,5 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { User } from '@prisma/client';
+import { PRISMA_INJECTION_TOKEN } from '../prisma/prisma.module';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateUserDto } from './dto';
 
@@ -7,7 +8,7 @@ import { UpdateUserDto } from './dto';
 export class UserService {
 	private readonly logger = new Logger(UserService.name);
 
-	constructor(private prismaService: PrismaService) {}
+	constructor(@Inject(PRISMA_INJECTION_TOKEN) private prismaService: PrismaService) {}
 
 	async updateUser(updateUserDto: UpdateUserDto, user: User) {
 		const updatedUser = await this.prismaService.user.update({

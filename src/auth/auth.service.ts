@@ -1,6 +1,7 @@
 import {
 	ConflictException,
 	ForbiddenException,
+	Inject,
 	Injectable,
 	InternalServerErrorException,
 	Logger,
@@ -11,6 +12,7 @@ import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import * as argon from 'argon2';
 import { Response } from 'express';
 import { JWT_COOKIE_NAME } from '../common/constants';
+import { PRISMA_INJECTION_TOKEN } from '../prisma/prisma.module';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthDto } from './dto';
 
@@ -19,7 +21,7 @@ export class AuthService {
 	private readonly logger = new Logger(AuthService.name);
 
 	constructor(
-		private prismaService: PrismaService,
+		@Inject(PRISMA_INJECTION_TOKEN) private prismaService: PrismaService,
 		private jwtService: JwtService,
 		private configService: ConfigService,
 	) {}

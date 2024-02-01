@@ -2,12 +2,14 @@ import { ForbiddenError, subject } from '@casl/ability';
 import {
 	BadRequestException,
 	ForbiddenException,
+	Inject,
 	Injectable,
 	Logger,
 	NotFoundException,
 } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { CaslAbilityFactory, CaslAction } from '../casl/casl-ability.factory';
+import { PRISMA_INJECTION_TOKEN } from '../prisma/prisma.module';
 import { PrismaService } from '../prisma/prisma.service';
 import { GetAllCommentsOfPost } from './dto/get-all-comments-by-post.dto';
 import { CreateCommentDto, DeleteCommentDto, UpdateCommentDto } from './dto/index';
@@ -17,7 +19,7 @@ export class CommentService {
 	private logger = new Logger(CommentService.name);
 
 	constructor(
-		private prismaService: PrismaService,
+		@Inject(PRISMA_INJECTION_TOKEN) private prismaService: PrismaService,
 		private caslAbilityFactory: CaslAbilityFactory,
 	) {}
 

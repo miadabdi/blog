@@ -1,7 +1,8 @@
 import { ForbiddenError } from '@casl/ability';
-import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { CaslAbilityFactory, CaslAction } from '../casl/casl-ability.factory';
+import { PRISMA_INJECTION_TOKEN } from '../prisma/prisma.module';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCategoryDto, DeleteCategoryDto, GetCategoryDto, UpdateCategoryDto } from './dto';
 
@@ -10,7 +11,7 @@ export class CategoryService {
 	private readonly logger = new Logger(CategoryService.name);
 
 	constructor(
-		private prismaService: PrismaService,
+		@Inject(PRISMA_INJECTION_TOKEN) private prismaService: PrismaService,
 		private caslAbilityFactory: CaslAbilityFactory,
 	) {}
 

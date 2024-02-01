@@ -1,6 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { BUCKET_NAMES_TYPE } from '../common/constants';
 import { MinioClientService } from '../minio-client/minio-client.service';
+import { PRISMA_INJECTION_TOKEN } from '../prisma/prisma.module';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -9,7 +10,7 @@ export class FileService {
 
 	constructor(
 		private minioClientService: MinioClientService,
-		private prismaService: PrismaService,
+		@Inject(PRISMA_INJECTION_TOKEN) private prismaService: PrismaService,
 	) {}
 
 	async upload(file: Express.Multer.File, directory: string, bucketName: BUCKET_NAMES_TYPE) {
