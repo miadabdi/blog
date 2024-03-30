@@ -15,6 +15,7 @@ import { User } from '@prisma/client';
 import { GetUser } from '../common/decorators';
 import { JwtAuthGuard } from '../common/guards';
 import { CreateTagDto, DeleteTagDto, GetTagDto, UpdateTagDto } from './dto';
+import { GetTagsByIdDto } from './dto/get-tags-by-id.dto';
 import { TagService } from './tag.service';
 
 @UseGuards(ThrottlerGuard)
@@ -49,5 +50,11 @@ export class TagController {
 	@Get()
 	getTag(@Query() getTagDto: GetTagDto) {
 		return this.tagService.getTag(getTagDto);
+	}
+
+	@HttpCode(HttpStatus.OK)
+	@Get()
+	getTagsById(@Query() getTagsByIdDto: GetTagsByIdDto) {
+		return this.tagService.getTagsById(getTagsByIdDto);
 	}
 }

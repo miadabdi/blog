@@ -7,5 +7,6 @@ import { TagService } from './tag.service';
 	imports: [CaslModule],
 	providers: [TagService],
 	controllers: [TagController],
+	exports: [TagService],
 })
 export class TagModule {}

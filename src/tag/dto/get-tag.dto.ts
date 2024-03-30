@@ -1,4 +1,7 @@
-import { PickType } from '@nestjs/swagger';
-import { UpdateTagDto } from './update-tag.dto';
+import { IsNotEmpty, IsString } from 'class-validator';
 
-export class GetTagDto extends PickType(UpdateTagDto, ['name']) {}
+export class GetTagDto {
+	@IsString()
+	@IsNotEmpty()
+	name: string;
+}

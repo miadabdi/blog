@@ -5,6 +5,7 @@ import { CaslAbilityFactory, CaslAction } from '../casl/casl-ability.factory';
 import { PRISMA_INJECTION_TOKEN } from '../prisma/prisma.module';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateTagDto, DeleteTagDto, GetTagDto, UpdateTagDto } from './dto';
+import { GetTagsByIdDto } from './dto/get-tags-by-id.dto';
 
 @Injectable()
 export class TagService {
@@ -14,6 +15,18 @@ export class TagService {
 		@Inject(PRISMA_INJECTION_TOKEN) private prismaService: PrismaService,
 		private caslAbilityFactory: CaslAbilityFactory,
 	) {}
+
+	async getTagsById(getTagsByIdDto: GetTagsByIdDto) {
+		const tags = await this.prismaService.tag.findMany({
+			where: {
+				id: {
+					in: getTagsByIdDto.ids,
+				},
+			},
+		});
+
+		return tags;
+	}
 
 	async createTag(createTagDto: CreateTagDto, user: User) {
 		const ability = this.caslAbilityFactory.createForUser(user);
@@ -74,13 +87,9 @@ export class TagService {
 	async getTag(getTagDto: GetTagDto) {
 		const tags = await this.prismaService.tag.findMany({
 			where: {
-				...(typeof getTagDto.name === 'number'
-					? {
-							name: {
-								contains: getTagDto.name,
-							},
-						}
-					: {}),
+				name: {
+					contains: getTagDto.name,
+				},
 			},
 		});
 
