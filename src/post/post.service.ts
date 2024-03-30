@@ -2,8 +2,10 @@ import { ForbiddenError, subject } from '@casl/ability';
 import { ForbiddenException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { CaslAbilityFactory, CaslAction } from '../casl/casl-ability.factory';
+import { CategoryService } from '../category/category.service';
 import { PRISMA_INJECTION_TOKEN } from '../prisma/prisma.module';
 import { PrismaService } from '../prisma/prisma.service';
+import { TagService } from '../tag/tag.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { DeletePostDto } from './dto/delete-post.dto';
 import { GetPostBySlugDto } from './dto/get-post-by-slug.dto';
@@ -16,6 +18,8 @@ export class PostService {
 	constructor(
 		@Inject(PRISMA_INJECTION_TOKEN) private prismaService: PrismaService,
 		private caslAbilityFactory: CaslAbilityFactory,
+		private tagService: TagService,
+		private categoryService: CategoryService,
 	) {}
 
 	async createPost(createPostDto: CreatePostDto, user: User) {
@@ -24,6 +28,44 @@ export class PostService {
 			ForbiddenError.from(ability).throwUnlessCan(CaslAction.Create, 'Post');
 		} catch (err: any) {
 			throw new ForbiddenException(err.message);
+		}
+
+		if (createPostDto.coverImageFileId) {
+			const file = await this.prismaService.file.findUnique({
+				where: {
+					id: createPostDto.coverImageFileId,
+				},
+			});
+
+			if (!file) {
+				throw new NotFoundException('Cover image not found');
+			}
+		}
+
+		if (createPostDto.tags.length > 0) {
+			const dbTags = await this.tagService.getTagsById({
+				ids: createPostDto.tags,
+			});
+
+			for (const tagId of createPostDto.tags) {
+				const dbTag = dbTags.find((dbTag) => dbTag.id == tagId);
+				if (!dbTag) {
+					throw new NotFoundException(`Tag with id ${tagId} is not found.`);
+				}
+			}
+		}
+
+		if (createPostDto.categories.length > 0) {
+			const dbCategories = await this.categoryService.getCategoriesById({
+				ids: createPostDto.categories,
+			});
+
+			for (const categoryId of createPostDto.categories) {
+				const dbCategory = dbCategories.find((dbCategory) => dbCategory.id == categoryId);
+				if (!dbCategory) {
+					throw new NotFoundException(`Category with id ${categoryId} is not found.`);
+				}
+			}
 		}
 
 		const post = await this.prismaService.post.create({
@@ -88,6 +130,44 @@ export class PostService {
 			ForbiddenError.from(ability).throwUnlessCan(CaslAction.Update, subject('Post', post));
 		} catch (err: any) {
 			throw new ForbiddenException(err.message);
+		}
+
+		if (updatePostDto.coverImageFileId) {
+			const file = await this.prismaService.file.findUnique({
+				where: {
+					id: updatePostDto.coverImageFileId,
+				},
+			});
+
+			if (!file) {
+				throw new NotFoundException('Cover image not found');
+			}
+		}
+
+		if (updatePostDto.tags.length > 0) {
+			const dbTags = await this.tagService.getTagsById({
+				ids: updatePostDto.tags,
+			});
+
+			for (const tagId of updatePostDto.tags) {
+				const dbTag = dbTags.find((dbTag) => dbTag.id == tagId);
+				if (!dbTag) {
+					throw new NotFoundException(`Tag with id ${tagId} is not found.`);
+				}
+			}
+		}
+
+		if (updatePostDto.categories.length > 0) {
+			const dbCategories = await this.categoryService.getCategoriesById({
+				ids: updatePostDto.categories,
+			});
+
+			for (const categoryId of updatePostDto.categories) {
+				const dbCategory = dbCategories.find((dbCategory) => dbCategory.id == categoryId);
+				if (!dbCategory) {
+					throw new NotFoundException(`Category with id ${categoryId} is not found.`);
+				}
+			}
 		}
 
 		const updatedPost = await this.prismaService.post.update({
