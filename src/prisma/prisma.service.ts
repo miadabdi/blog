@@ -1,6 +1,6 @@
 import { INestApplication, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 
 export type PrismaService = ReturnType<BasePrismaService['withExtensions']>;
 const queryLogger = new Logger('QueryLogger');
@@ -16,6 +16,18 @@ export class BasePrismaService extends PrismaClient implements OnModuleInit {
 					url: configService.get<string>('DATABASE_URL'),
 				},
 			},
+			log: [
+				{
+					emit: 'event',
+					level: 'query',
+				},
+			],
+		});
+
+		this.$on('query' as never, async (e: Prisma.QueryEvent) => {
+			this.logger.debug('Query: ' + e.query);
+			this.logger.debug('Params: ' + e.params);
+			this.logger.debug('Duration: ' + e.duration + 'ms');
 		});
 	}
 
