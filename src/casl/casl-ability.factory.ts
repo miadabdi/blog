@@ -43,6 +43,7 @@ export class CaslAbilityFactory {
 			cannot(CaslAction.Update, 'Tag').because('Only admins can update tags');
 			cannot(CaslAction.Delete, 'Tag').because('Only admins can delete tags');
 
+			can(CaslAction.Create, 'Post');
 			can(CaslAction.Update, 'Post');
 			cannot(CaslAction.Update, 'Post', { authorId: { not: user.id } }).because(
 				`You cannot update posts you don't own`,
@@ -56,6 +57,7 @@ export class CaslAbilityFactory {
 				'Published posts can only be deleted by admins',
 			);
 
+			can(CaslAction.Create, 'Comment');
 			can(CaslAction.Update, 'Comment');
 			cannot(CaslAction.Update, 'Comment', { authorId: { not: user.id } }).because(
 				`You cannot update comments you don't own`,
