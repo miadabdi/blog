@@ -16,6 +16,7 @@ import { GetUser } from '../common/decorators';
 import { JwtAuthGuard } from '../common/guards';
 import { CategoryService } from './category.service';
 import { CreateCategoryDto, DeleteCategoryDto, GetCategoryDto, UpdateCategoryDto } from './dto';
+import { GetCategoriesByIdDto } from './dto/get-categories-by-id.dto';
 
 @UseGuards(ThrottlerGuard)
 @Throttle({ default: { limit: 1200, ttl: 60 * 10 } }) // 1200 auth requests for 10 minutes
@@ -49,5 +50,11 @@ export class CategoryController {
 	@Get()
 	getCategory(@Query() getCategoryDto: GetCategoryDto) {
 		return this.categoryService.getCategory(getCategoryDto);
+	}
+
+	@HttpCode(HttpStatus.OK)
+	@Get()
+	getCategoriesById(@Query() getCategoriesByIdDto: GetCategoriesByIdDto) {
+		return this.categoryService.getCategoriesById(getCategoriesByIdDto);
 	}
 }

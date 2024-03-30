@@ -5,6 +5,7 @@ import { CaslAbilityFactory, CaslAction } from '../casl/casl-ability.factory';
 import { PRISMA_INJECTION_TOKEN } from '../prisma/prisma.module';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCategoryDto, DeleteCategoryDto, GetCategoryDto, UpdateCategoryDto } from './dto';
+import { GetCategoriesByIdDto } from './dto/get-categories-by-id.dto';
 
 @Injectable()
 export class CategoryService {
@@ -14,6 +15,18 @@ export class CategoryService {
 		@Inject(PRISMA_INJECTION_TOKEN) private prismaService: PrismaService,
 		private caslAbilityFactory: CaslAbilityFactory,
 	) {}
+
+	async getCategoriesById(getCategoriesByIdDto: GetCategoriesByIdDto) {
+		const categories = await this.prismaService.category.findMany({
+			where: {
+				id: {
+					in: getCategoriesByIdDto.ids,
+				},
+			},
+		});
+
+		return categories;
+	}
 
 	async createCategory(createCategoryDto: CreateCategoryDto, user: User) {
 		const ability = this.caslAbilityFactory.createForUser(user);
@@ -81,13 +94,9 @@ export class CategoryService {
 	async getCategory(getCategoryDto: GetCategoryDto) {
 		const categories = await this.prismaService.category.findMany({
 			where: {
-				...(typeof getCategoryDto.name === 'number'
-					? {
-							name: {
-								contains: getCategoryDto.name,
-							},
-						}
-					: {}),
+				name: {
+					contains: getCategoryDto.name,
+				},
 			},
 		});
 

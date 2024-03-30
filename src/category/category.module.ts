@@ -7,5 +7,6 @@ import { CategoryService } from './category.service';
 	imports: [CaslModule],
 	providers: [CategoryService],
 	controllers: [CategoryController],
+	exports: [CategoryService],
 })
 export class CategoryModule {}
