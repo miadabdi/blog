@@ -1,26 +1,39 @@
 import { MailerService } from '@nestjs-modules/mailer';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { SentMessageInfo } from 'nodemailer';
-import { anyObject } from '../common/types';
 
 @Injectable()
 export class MailService {
+	private logger = new Logger(MailService.name);
+
 	constructor(private readonly mailerService: MailerService) {}
 
-	sendHtml(to: string, subject: string, template: string, context: anyObject): Promise<SentMessageInfo> {
+	sendWithTemp(to: string, subject: string, template: string, context: object): Promise<SentMessageInfo> {
+		this.logger.log(`Sending mail to ${to}`);
+
 		return this.mailerService.sendMail({
 			to,
-			// from: 'noreply@nestjs.com',
 			subject,
 			template: __dirname + `/${template}`, // The `.pug`, `.ejs` or `.hbs` extension is appended automatically.
 			context,
 		});
 	}
 
-	sendPlain(to: string, subject: string, message: string): Promise<SentMessageInfo> {
+	sendHtml(to: string, subject: string, html: string): Promise<SentMessageInfo> {
+		this.logger.log(`Sending mail to ${to}`);
+
 		return this.mailerService.sendMail({
 			to,
-			// from: 'noreply@nestjs.com',
+			subject,
+			html,
+		});
+	}
+
+	sendPlain(to: string, subject: string, message: string): Promise<SentMessageInfo> {
+		this.logger.log(`Sending mail to ${to}`);
+
+		return this.mailerService.sendMail({
+			to,
 			subject,
 			text: message,
 		});

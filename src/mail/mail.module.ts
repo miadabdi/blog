@@ -4,6 +4,8 @@ import { Global, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MailService } from './mail.service';
 
+const templatesDir = __dirname + '/templates';
+
 @Global()
 @Module({
 	imports: [
@@ -26,7 +28,7 @@ import { MailService } from './mail.service';
 					from: config.get<string>('SMTP_FROM'),
 				},
 				template: {
-					dir: __dirname + '/templates',
+					dir: templatesDir,
 					adapter: new EjsAdapter(),
 					options: {
 						strict: true,
