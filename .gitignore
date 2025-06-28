@@ -14,9 +14,6 @@ ENV/
 .env/
 *.env
 
-# VSCode
-.vscode/
-
 # Pytest
 .cache/
 .pytest_cache/
