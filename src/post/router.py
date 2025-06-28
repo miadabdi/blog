@@ -44,7 +44,7 @@ async def get_post_by_id(
     return await service.get_post_by_id(post_id, session)
 
 
-@router.delete("/{post_id}")
+@router.delete("/{post_id}", response_model=PostPublic)
 @authorize(role=[UserRole.ADMIN])
 async def delete_post(
     post_id: int,

@@ -1,7 +1,7 @@
 from functools import lru_cache
 from typing import Annotated
 
-from fastapi import Depends
+from fastapi import Depends, HTTPException, status
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from .models import Post
@@ -31,9 +31,16 @@ class PostService:
         await session.commit()
         return result
 
-    async def get_post_by_id(self, id: int, session: AsyncSession) -> Post | None:
+    async def get_post_by_id(self, id: int, session: AsyncSession) -> Post:
         result = await self.repository.get_by_id(id, session)
         await session.commit()
+
+        if result is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Post with id {id} not found",
+            )
+
         return result
 
 
