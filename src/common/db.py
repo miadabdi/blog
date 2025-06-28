@@ -1,0 +1,36 @@
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+from sqlmodel import SQLModel
+from sqlmodel.ext.asyncio.session import AsyncSession
+
+from .settings import settings
+
+DATABASE_URL = f"postgresql+asyncpg://{settings.POSTGRES_USER}:{settings.POSTGRES_PASSWORD}@{settings.POSTGRES_HOST}:{settings.POSTGRES_PORT}/{settings.POSTGRES_DB}"
+
+async_engine = create_async_engine(
+    DATABASE_URL,
+    echo=True,
+    echo_pool=True,
+    future=True,
+    pool_size=5,
+    max_overflow=20,
+    pool_recycle=3600,
+)
+
+SessionLocal = async_sessionmaker(
+    autocommit=False,
+    autoflush=True,
+    expire_on_commit=False,
+    bind=async_engine,
+    class_=AsyncSession,
+)
+
+
+async def create_db_and_tables():
+    async with async_engine.begin() as conn:
+        # For SQLModel, this will create the tables (but won't drop existing ones)
+        await conn.run_sync(SQLModel.metadata.create_all)
+
+
+async def get_session():
+    async with AsyncSession(async_engine, expire_on_commit=False) as session:
+        yield session
