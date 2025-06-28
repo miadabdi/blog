@@ -37,7 +37,7 @@ class UserService:
         await self.create_user(user, session)
         await session.commit()
 
-        return {"message": "ok"}
+        return user
 
     async def sign_in(
         self, form_data: OAuth2PasswordRequestForm, session: AsyncSession

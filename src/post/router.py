@@ -6,7 +6,7 @@ from ..auth.auth import authorize, get_current_active_user
 from ..auth.models import User
 from ..common.deps import AsyncSessionDep
 from ..common.user_role import UserRole
-from .schemas import CreatePost, UpdatePost
+from .schemas import CreatePost, PostPublic, UpdatePost
 from .service import PostService, get_PostService
 
 router = APIRouter(prefix="/post")
@@ -14,7 +14,7 @@ router = APIRouter(prefix="/post")
 PostServiceDep = Annotated[PostService, Depends(get_PostService)]
 
 
-@router.post("/")
+@router.post("/", response_model=PostPublic)
 @authorize(role=[UserRole.ADMIN])
 async def create_post(
     post: Annotated[CreatePost, Body()],
@@ -25,7 +25,7 @@ async def create_post(
     return await service.create_post(post, session)
 
 
-@router.patch("/{post_id}")
+@router.patch("/{post_id}", response_model=PostPublic)
 @authorize(role=[UserRole.ADMIN])
 async def update_post(
     post_id: int,
@@ -37,7 +37,7 @@ async def update_post(
     return await service.update_post(post_id, post, session)
 
 
-@router.get("/{post_id}")
+@router.get("/{post_id}", response_model=PostPublic)
 async def get_post_by_id(
     post_id: int, session: AsyncSessionDep, service: PostServiceDep
 ):

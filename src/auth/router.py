@@ -14,7 +14,7 @@ router = APIRouter(prefix="/auth")
 UserServiceDep = Annotated[UserService, Depends(get_UserService)]
 
 
-@router.post("/signup")
+@router.post("/signup", response_model=UserPublic)
 async def signup(
     form_data: Annotated[SignUp, Body()],
     user_service: Annotated[UserService, Depends(get_UserService)],
@@ -23,7 +23,7 @@ async def signup(
     return await user_service.sign_up(form_data, session)
 
 
-@router.post("/signin")
+@router.post("/signin", response_model=Token)
 async def signin(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     session: AsyncSessionDep,
