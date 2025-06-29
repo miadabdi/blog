@@ -20,7 +20,7 @@ from .repository import UserRepository, get_UserRepository
 from .schemas import TokenData
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/signin")
 
 
 class AuthService:

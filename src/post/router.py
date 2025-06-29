@@ -9,7 +9,7 @@ from ..common.user_role import UserRole
 from .schemas import CreatePost, PostPublic, UpdatePost
 from .service import PostService, get_PostService
 
-router = APIRouter(prefix="/post")
+router = APIRouter(prefix="/post", tags=["post"])
 
 PostServiceDep = Annotated[PostService, Depends(get_PostService)]
 

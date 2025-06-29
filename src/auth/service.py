@@ -22,7 +22,6 @@ class UserService:
 
     async def create_user(self, data: User, session: AsyncSession) -> User:
         user_record = await self.repository.create(data.model_dump(), session)
-        await session.commit()
         return user_record
 
     async def sign_up(self, form_data: SignUp, session: AsyncSession):
@@ -37,7 +36,6 @@ class UserService:
         user = User(**form_data.model_dump(), hashed_password=hashed_password)
 
         await self.create_user(user, session)
-        await session.commit()
 
         return user
 
@@ -56,7 +54,6 @@ class UserService:
             data={"sub": user.email}, expires_delta=access_token_expires
         )
 
-        await session.commit()
         return Token(access_token=access_token, token_type="bearer")
 
     async def update_user(
@@ -70,17 +67,14 @@ class UserService:
 
     async def delete_user(self, id: int, session: AsyncSession) -> User:
         result = await self.repository.delete(id, session)
-        await session.commit()
         return result
 
     async def get_user_by_id(self, id: int, session: AsyncSession) -> User | None:
         result = await self.repository.get_by_id(id, session)
-        await session.commit()
         return result
 
     async def get_user_by_email(self, email: str, session: AsyncSession) -> User | None:
         result = await self.repository.get_by_email(email, session)
-        await session.commit()
         return result
 
 
