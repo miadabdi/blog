@@ -22,7 +22,9 @@ async def create_post(
     service: PostServiceDep,
     current_user: Annotated[User, Depends(get_current_active_user)],
 ):
-    return await service.create_post(post, session)
+    result = await service.create_post(post, session)
+    await session.commit()
+    return result
 
 
 @router.patch("/{post_id}", response_model=PostPublic)
@@ -34,14 +36,18 @@ async def update_post(
     service: PostServiceDep,
     current_user: Annotated[User, Depends(get_current_active_user)],
 ):
-    return await service.update_post(post_id, post, session)
+    result = await service.update_post(post_id, post, session)
+    await session.commit()
+    return result
 
 
 @router.get("/{post_id}", response_model=PostPublic)
 async def get_post_by_id(
     post_id: int, session: AsyncSessionDep, service: PostServiceDep
 ):
-    return await service.get_post_by_id(post_id, session)
+    result = await service.get_post_by_id(post_id, session)
+    await session.commit()
+    return result
 
 
 @router.delete("/{post_id}", response_model=PostPublic)
@@ -52,4 +58,6 @@ async def delete_post(
     service: PostServiceDep,
     current_user: Annotated[User, Depends(get_current_active_user)],
 ):
-    return await service.delete_post(post_id, session)
+    result = await service.delete_post(post_id, session)
+    await session.commit()
+    return result

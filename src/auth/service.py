@@ -35,9 +35,8 @@ class UserService:
         hashed_password = await self.auth_service.get_password_hash(form_data.password)
         user = User(**form_data.model_dump(), hashed_password=hashed_password)
 
-        await self.create_user(user, session)
-
-        return user
+        created_user = await self.create_user(user, session)
+        return created_user
 
     async def sign_in(
         self, form_data: OAuth2PasswordRequestForm, session: AsyncSession
@@ -61,7 +60,6 @@ class UserService:
     ) -> User:
         user_data = update_data.model_dump(exclude_unset=True)
         updated_user = await self.repository.update(id, user_data, session)
-        await session.commit()
 
         return updated_user
 
