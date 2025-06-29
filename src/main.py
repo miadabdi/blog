@@ -1,19 +1,44 @@
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
 from .auth.router import router as auth_router
 from .common.db import create_db_and_tables
+from .common.exceptions.register_exceptions import register_exceptions
+from .configure_logging import configure_logging
 from .post.router import router as post_router
+
+configure_logging()
+
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan_with_db_cleanup(app: FastAPI):
+    # Startup
+    logger.info("Starting up...")
     await create_db_and_tables()
+
     yield
 
+    # Shutdown - Database specific cleanup
+    logger.info("Cleaning up database connections...")
 
-app = FastAPI(lifespan=lifespan)
+    # If using SQLAlchemy async engine
+    from .common.db import async_engine
+
+    try:
+        # Close all database connections
+        await async_engine.dispose()
+        logger.info("Database engine disposed")
+    except Exception as e:
+        logger.error(f"Error disposing database engine: {e}")
+
+
+app = FastAPI(lifespan=lifespan_with_db_cleanup)
+
+register_exceptions(app)
 
 app.include_router(auth_router)
 app.include_router(post_router)
