@@ -3,7 +3,7 @@ from functools import lru_cache, wraps
 from typing import Annotated
 
 import jwt
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends
 from fastapi.concurrency import run_in_threadpool
 from fastapi.security import OAuth2PasswordBearer
 from jwt.exceptions import InvalidTokenError
@@ -11,6 +11,9 @@ from passlib.context import CryptContext
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from ..common.deps import AsyncSessionDep
+from ..common.exceptions.forbidden import ForbiddenException
+from ..common.exceptions.internal import InternalException
+from ..common.exceptions.unauthorized import UnauthorizedException
 from ..common.settings import settings
 from .models import User
 from .repository import UserRepository, get_UserRepository
@@ -46,26 +49,22 @@ class AuthService:
         return encoded_jwt
 
     async def verify_user(self, token: str, session: AsyncSession):
-        credentials_exception = HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
         try:
             payload = jwt.decode(
                 token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
             )
             username = payload.get("sub")
             if username is None:
-                raise credentials_exception
+                raise UnauthorizedException()
             token_data = TokenData(username=username)
         except InvalidTokenError:
-            raise credentials_exception
+            raise UnauthorizedException()
+        except Exception:
+            raise InternalException()
 
         user = await self.user_repository.get_by_email(token_data.username, session)
         if user is None:
-            raise credentials_exception
+            raise UnauthorizedException()
         return user
 
     async def authenticate_user(self, email: str, password: str, session: AsyncSession):
@@ -100,7 +99,7 @@ async def get_current_active_user(
     current_user: Annotated[User, Depends(get_current_user)],
 ):
     if not current_user.is_active:
-        raise HTTPException(status_code=400, detail="Inactive user")
+        raise UnauthorizedException()
     return current_user
 
 
@@ -114,15 +113,12 @@ def authorize(role: list):
             )
 
             if not current_user or not hasattr(current_user, "role"):
-                raise HTTPException(
-                    status_code=401, detail="Current user not found or invalid"
-                )
+                raise UnauthorizedException()
 
             user_role = current_user.role
             if user_role not in role:
-                raise HTTPException(
-                    status_code=403, detail="User is not authorized to access"
-                )
+                raise ForbiddenException()
+
             return await func(*args, **kwargs)
 
         return wrapper

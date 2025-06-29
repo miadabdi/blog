@@ -1,9 +1,9 @@
 from typing import Any, Dict, Generic, Optional, Type, TypeVar
 
-from fastapi import HTTPException
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+from ..common.exceptions.not_found import NotFoundException
 from .generic_model import GenericModel
 
 T = TypeVar("T", bound=GenericModel)
@@ -42,9 +42,9 @@ class GenericRepository(Generic[T]):
         """Update a record by ID"""
         record = await self.get_by_id(id, session)
         if record is None:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Record {id} of {self.model.__name__} not found",
+            raise NotFoundException(
+                resource=self.model.__name__,
+                resource_id=str(id),
             )
 
         record.sqlmodel_update(data)
@@ -57,9 +57,9 @@ class GenericRepository(Generic[T]):
         """Delete a record by ID"""
         record = await self.get_by_id(id, session)
         if record is None:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Record {id} of {self.model.__name__} not found",
+            raise NotFoundException(
+                resource=self.model.__name__,
+                resource_id=str(id),
             )
 
         await session.delete(record)

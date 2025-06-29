@@ -1,10 +1,13 @@
 from functools import lru_cache
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends
 from sqlalchemy.exc import IntegrityError
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+from ..common.exceptions.conflict import ConflictException
+from ..common.exceptions.custom_base_exception import CustomBaseException
+from ..common.exceptions.not_found import NotFoundException
 from .models import Post
 from .repository import PostRepository, get_PostRepository
 from .schemas import CreatePost, UpdatePost
@@ -17,17 +20,14 @@ class PostService:
     async def create_post(self, data: CreatePost, session: AsyncSession) -> Post:
         try:
             post_record = await self.repository.create(data.model_dump(), session)
-        except IntegrityError as e:
-            print(f"IntegrityError: {e.orig}")
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Post with this title already exists.",
+        except IntegrityError:
+            raise ConflictException(
+                resource=Post.__name__,
+                message="Duplicate title",
             )
-        except Exception as e:
-            print(f"Unexpected error: {e}")
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="An unexpected error occurred while creating the post.",
+        except Exception:
+            raise CustomBaseException(
+                message="An unexpected error occurred while creating the post.",
             )
 
         return post_record
@@ -47,10 +47,7 @@ class PostService:
         result = await self.repository.get_by_id(id, session)
 
         if result is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Post with id {id} not found",
-            )
+            raise NotFoundException(Post.__name__, str(id))
 
         return result
 

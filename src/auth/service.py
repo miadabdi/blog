@@ -2,10 +2,12 @@ from datetime import timedelta
 from functools import lru_cache
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+from ..common.exceptions.conflict import ConflictException
+from ..common.exceptions.invalid_credintials import InvalidCredentialsException
 from ..common.settings import settings
 from .auth import AuthService, get_AuthService
 from .models import User
@@ -26,9 +28,9 @@ class UserService:
     async def sign_up(self, form_data: SignUp, session: AsyncSession):
         dup = await self.get_user_by_email(form_data.email, session)
         if dup:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Email Already Exists",
+            raise ConflictException(
+                resource=User.__name__,
+                message="User with this email already exists.",
             )
 
         hashed_password = await self.auth_service.get_password_hash(form_data.password)
@@ -47,11 +49,7 @@ class UserService:
         )
 
         if not user:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Incorrect username or password",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
+            raise InvalidCredentialsException()
 
         access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = self.auth_service.create_access_token(

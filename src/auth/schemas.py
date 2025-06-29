@@ -31,4 +31,4 @@ class UserPublic(BaseModel):
     is_active: bool
 
     class Config:
-        orm_mode = True  # Enable ORM mode to read data from SQLAlchemy models
+        from_attributes = True
