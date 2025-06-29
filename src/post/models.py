@@ -2,6 +2,7 @@ from datetime import datetime
 
 from slugify import slugify
 from sqlalchemy import event
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field
 
 from ..common.generic_model import GenericModel
@@ -14,9 +15,13 @@ class Post(GenericModel, table=True):
     title: str = Field(min_length=1)
     slug: str = Field(unique=True, min_length=1)
     summary: str = Field(min_length=1)
-    body: str = Field(min_length=1)
     featured_image: str = Field(min_length=1)
     view_count: int = Field(default=0)
+
+    body: dict = Field(sa_type=JSONB, nullable=False)
+
+    class Config:  # type: ignore
+        arbitrary_types_allowed = True
 
 
 @event.listens_for(Post, "before_insert")
