@@ -3,9 +3,15 @@ from datetime import datetime
 from slugify import slugify
 from sqlalchemy import event
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlmodel import Field
+from sqlmodel import Field, Relationship
 
+from ..category.models import Category
 from ..common.generic_model import GenericModel
+from ..tag.models import Tag  # <-- Add this import
+from .link_models import (
+    PostCategoryLink,
+    PostTagLink,  # <-- Add this import
+)
 
 
 class Post(GenericModel, table=True):
@@ -19,6 +25,19 @@ class Post(GenericModel, table=True):
     view_count: int = Field(default=0)
 
     body: dict = Field(sa_type=JSONB, nullable=False)
+
+    categories: list[Category] = Relationship(
+        back_populates="posts",
+        link_model=PostCategoryLink,
+        sa_relationship_kwargs={
+            "lazy": "selectin"
+        },  # This enables automatic eager loading
+    )
+    tags: list[Tag] = Relationship(
+        back_populates="posts",
+        link_model=PostTagLink,
+        sa_relationship_kwargs={"lazy": "selectin"},
+    )
 
     class Config:  # type: ignore
         arbitrary_types_allowed = True

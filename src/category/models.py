@@ -1,8 +1,14 @@
+from typing import TYPE_CHECKING
+
 from slugify import slugify
 from sqlalchemy import event
-from sqlmodel import Field
+from sqlmodel import Field, Relationship
 
 from ..common.generic_model import GenericModel
+from ..post.link_models import PostCategoryLink
+
+if TYPE_CHECKING:
+    from ..post.models import Post  # Avoid circular import issues
 
 
 class Category(GenericModel, table=True):
@@ -11,6 +17,10 @@ class Category(GenericModel, table=True):
     name: str = Field(unique=True, nullable=False)
     slug: str = Field(unique=True, nullable=False)
     description: str | None = Field(default=None)
+
+    posts: list["Post"] = Relationship(
+        back_populates="categories", link_model=PostCategoryLink
+    )
 
 
 @event.listens_for(Category, "before_insert")

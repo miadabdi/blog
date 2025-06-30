@@ -1,8 +1,14 @@
+from typing import TYPE_CHECKING
+
 from slugify import slugify
 from sqlalchemy import event
-from sqlmodel import Field
+from sqlmodel import Field, Relationship
 
 from ..common.generic_model import GenericModel
+from ..post.link_models import PostTagLink
+
+if TYPE_CHECKING:
+    from ..post.models import Post
 
 
 class Tag(GenericModel, table=True):
@@ -10,6 +16,11 @@ class Tag(GenericModel, table=True):
 
     name: str = Field(unique=True, nullable=False)
     slug: str = Field(unique=True, nullable=False)
+
+    posts: list["Post"] = Relationship(
+        back_populates="tags",
+        link_model=PostTagLink,
+    )
 
 
 @event.listens_for(Tag, "before_insert")
