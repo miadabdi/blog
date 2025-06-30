@@ -9,7 +9,12 @@ logger = logging.getLogger(__name__)
 
 
 class InternalException(CustomBaseException):
-    def __init__(self, message: str = "Internal server error."):
+    def __init__(
+        self,
+        message: str = "Internal server error.",
+        underlying_error: Exception | None = None,
+    ):
+        self.underlying_error = underlying_error
         super().__init__(message=message)
 
 

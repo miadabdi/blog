@@ -4,10 +4,13 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from .auth.router import router as auth_router
+from .category.router import router as category_router
+from .comment.router import router as comment_router
 from .common.db import create_db_and_tables
 from .common.exceptions.register_exceptions import register_exceptions
 from .configure_logging import configure_logging
 from .post.router import router as post_router
+from .tag.router import router as tag_router
 
 configure_logging()
 
@@ -42,3 +45,6 @@ register_exceptions(app)
 
 app.include_router(auth_router)
 app.include_router(post_router)
+app.include_router(category_router)
+app.include_router(tag_router)
+app.include_router(comment_router)

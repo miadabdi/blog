@@ -6,7 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from ..common.exceptions.conflict import ConflictException
-from ..common.exceptions.custom_base_exception import CustomBaseException
+from ..common.exceptions.internal import InternalException
 from ..common.exceptions.not_found import NotFoundException
 from .models import Post
 from .repository import PostRepository, get_PostRepository
@@ -25,9 +25,10 @@ class PostService:
                 resource=Post.__name__,
                 message="Duplicate title",
             )
-        except Exception:
-            raise CustomBaseException(
-                message="An unexpected error occurred while creating the post.",
+        except Exception as e:
+            raise InternalException(
+                message="An unexpected error occurred while creating the category.",
+                underlying_error=e,
             )
 
         return post_record
@@ -36,7 +37,19 @@ class PostService:
         self, id: int, update_data: UpdatePost, session: AsyncSession
     ) -> Post:
         post_data = update_data.model_dump(exclude_unset=True)
-        updated_post = await self.repository.update(id, post_data, session)
+        try:
+            updated_post = await self.repository.update(id, post_data, session)
+        except IntegrityError:
+            raise ConflictException(
+                resource=Post.__name__,
+                message="Duplicate title",
+            )
+        except Exception as e:
+            raise InternalException(
+                message="An unexpected error occurred while creating the category.",
+                underlying_error=e,
+            )
+
         return updated_post
 
     async def delete_post(self, id: int, session: AsyncSession) -> Post:
