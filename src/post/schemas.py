@@ -2,8 +2,9 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
+from ..auth.schemas import UserPublic
 from ..category.schemas import CategoryPublic
-from ..tag.schemas import TagPublic  # <-- Add this import
+from ..tag.schemas import TagPublic
 
 
 class CreatePost(BaseModel):
@@ -12,7 +13,7 @@ class CreatePost(BaseModel):
     body: str = Field(min_length=1)
     featured_image: str = Field(min_length=1)
     category_ids: list[int] | None = Field(default=None)
-    tag_ids: list[int] | None = Field(default=None)  # <-- Add this field
+    tag_ids: list[int] | None = Field(default=None)
 
 
 class UpdatePost(BaseModel):
@@ -21,7 +22,7 @@ class UpdatePost(BaseModel):
     body: str | None = Field(default=None)
     featured_image: str | None = Field(default=None)
     category_ids: list[int] | None = Field(default=None)
-    tag_ids: list[int] | None = Field(default=None)  # <-- Add this field
+    tag_ids: list[int] | None = Field(default=None)
 
 
 class PostPublic(BaseModel):
@@ -34,7 +35,9 @@ class PostPublic(BaseModel):
     published_at: datetime | None
     view_count: int
     categories: list[CategoryPublic] | None
-    tags: list[TagPublic] | None  # <-- Add this field
+    tags: list[TagPublic] | None
+    author_id: int = Field(ge=1)
+    author: UserPublic
 
     class Config:
         from_attributes = True

@@ -22,7 +22,7 @@ async def create_post(
     service: PostServiceDep,
     current_user: Annotated[User, Depends(get_current_active_user)],
 ):
-    return await service.create_post(post, session)
+    return await service.create_post(post, current_user, session)
 
 
 @router.patch("/{post_id}", response_model=PostPublic)

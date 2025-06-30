@@ -5,12 +5,13 @@ from sqlalchemy import event
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, Relationship
 
+from ..auth.models import User
 from ..category.models import Category
 from ..common.generic_model import GenericModel
-from ..tag.models import Tag  # <-- Add this import
+from ..tag.models import Tag
 from .link_models import (
     PostCategoryLink,
-    PostTagLink,  # <-- Add this import
+    PostTagLink,
 )
 
 
@@ -26,17 +27,21 @@ class Post(GenericModel, table=True):
 
     body: dict = Field(sa_type=JSONB, nullable=False)
 
+    author_id: int = Field(foreign_key="users.id", nullable=False)
+    author: User = Relationship(
+        back_populates="posts",
+        sa_relationship_kwargs={"lazy": "joined"},
+    )
+
     categories: list[Category] = Relationship(
         back_populates="posts",
         link_model=PostCategoryLink,
-        sa_relationship_kwargs={
-            "lazy": "selectin"
-        },  # This enables automatic eager loading
+        sa_relationship_kwargs={"lazy": "joined"},
     )
     tags: list[Tag] = Relationship(
         back_populates="posts",
         link_model=PostTagLink,
-        sa_relationship_kwargs={"lazy": "selectin"},
+        sa_relationship_kwargs={"lazy": "joined"},
     )
 
     class Config:  # type: ignore

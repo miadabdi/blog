@@ -5,6 +5,7 @@ from fastapi import Depends
 from sqlalchemy.exc import IntegrityError
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+from ..auth.models import User
 from ..category.service import CategoryService, get_CategoryService
 from ..common.exceptions.conflict import ConflictException
 from ..common.exceptions.internal import InternalException
@@ -26,7 +27,9 @@ class PostService:
         self.category_service = category_service
         self.tag_service = tag_service
 
-    async def create_post(self, data: CreatePost, session: AsyncSession) -> Post:
+    async def create_post(
+        self, data: CreatePost, current_user: User, session: AsyncSession
+    ) -> Post:
         categories = []
         for category_id in data.category_ids or []:
             category = await self.category_service.get_category_by_id(
@@ -40,7 +43,13 @@ class PostService:
 
         try:
             post_record = await self.repository.create(
-                {**data.model_dump(), "categories": categories, "tags": tags}, session
+                {
+                    **data.model_dump(),
+                    "author_id": current_user.id,
+                    "categories": categories,
+                    "tags": tags,
+                },
+                session,
             )
         except IntegrityError:
             raise ConflictException(
