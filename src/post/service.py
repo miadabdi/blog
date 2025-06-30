@@ -59,24 +59,36 @@ class PostService:
         self, id: int, update_data: UpdatePost, session: AsyncSession
     ) -> Post:
         post_data = update_data.model_dump(exclude_unset=True)
-        categories = None
-        tags = None
-        if update_data.category_ids is not None:
-            categories = []
-            for category_id in update_data.category_ids:
-                category = await self.category_service.get_category_by_id(
-                    category_id, session
-                )
-                categories.append(category)
-            post_data["categories"] = categories
-        if update_data.tag_ids is not None:
-            tags = []
-            for tag_id in update_data.tag_ids:
-                tag = await self.tag_service.get_tag_by_id(tag_id, session)
-                tags.append(tag)
-            post_data["tags"] = tags
         try:
-            updated_post = await self.repository.update(id, post_data, session)
+            updated_post = await self.repository.get_by_id(id, session)
+            if updated_post is None:
+                raise NotFoundException(Post.__name__, str(id))
+
+            # Prepare related records if provided
+            categories = None
+            if update_data.category_ids is not None:
+                categories = []
+                for category_id in update_data.category_ids:
+                    category = await self.category_service.get_category_by_id(
+                        category_id, session
+                    )
+                    categories.append(category)
+
+            tags = None
+            if update_data.tag_ids is not None:
+                tags = []
+                for tag_id in update_data.tag_ids:
+                    tag = await self.tag_service.get_tag_by_id(tag_id, session)
+                    tags.append(tag)
+
+            # Pass everything to the repository
+            result = await self.repository.update_with_m2m(
+                updated_post,
+                post_data,
+                session,
+                categories=categories,
+                tags=tags,
+            )
         except IntegrityError:
             raise ConflictException(
                 resource=Post.__name__,
@@ -84,11 +96,11 @@ class PostService:
             )
         except Exception as e:
             raise InternalException(
-                message="An unexpected error occurred while creating the category.",
+                message="An unexpected error occurred while updating the post.",
                 underlying_error=e,
             )
 
-        return updated_post
+        return result
 
     async def delete_post(self, id: int, session: AsyncSession) -> Post:
         result = await self.repository.delete(id, session)
@@ -109,4 +121,5 @@ def get_PostService(
     category_service: Annotated[CategoryService, Depends(get_CategoryService)],
     tag_service: Annotated[TagService, Depends(get_TagService)],
 ) -> PostService:
+    return PostService(postRepository, category_service, tag_service)
     return PostService(postRepository, category_service, tag_service)

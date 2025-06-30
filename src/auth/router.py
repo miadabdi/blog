@@ -23,9 +23,7 @@ async def signup(
     user_service: Annotated[UserService, Depends(get_UserService)],
     session: AsyncSessionDep,
 ):
-    result = await user_service.sign_up(form_data, session)
-    await session.commit()
-    return result
+    return await user_service.sign_up(form_data, session)
 
 
 @router.post(
@@ -37,9 +35,7 @@ async def signin(
     session: AsyncSessionDep,
     user_service: Annotated[UserService, Depends(get_UserService)],
 ) -> Token:
-    result = await user_service.sign_in(form_data, session)
-    await session.commit()
-    return result
+    return await user_service.sign_in(form_data, session)
 
 
 @router.get(

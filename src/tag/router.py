@@ -22,9 +22,7 @@ async def create_tag(
     service: TagServiceDep,
     current_user: Annotated[User, Depends(get_current_active_user)],
 ):
-    result = await service.create_tag(tag, session)
-    await session.commit()
-    return result
+    return await service.create_tag(tag, session)
 
 
 @router.patch("/{tag_id}", response_model=TagPublic)
@@ -36,9 +34,7 @@ async def update_tag(
     service: TagServiceDep,
     current_user: Annotated[User, Depends(get_current_active_user)],
 ):
-    result = await service.update_tag(tag_id, tag, session)
-    await session.commit()
-    return result
+    return await service.update_tag(tag_id, tag, session)
 
 
 @router.delete("/{tag_id}", response_model=TagPublic)
@@ -49,20 +45,14 @@ async def delete_tag(
     service: TagServiceDep,
     current_user: Annotated[User, Depends(get_current_active_user)],
 ):
-    result = await service.delete_tag(tag_id, session)
-    await session.commit()
-    return result
+    return await service.delete_tag(tag_id, session)
 
 
 @router.get("/{tag_id}", response_model=TagPublic)
 async def get_tag_by_id(tag_id: int, session: AsyncSessionDep, service: TagServiceDep):
-    result = await service.get_tag_by_id(tag_id, session)
-    await session.commit()
-    return result
+    return await service.get_tag_by_id(tag_id, session)
 
 
 @router.get("/", response_model=list[TagPublic])
 async def list_tags(session: AsyncSessionDep, service: TagServiceDep):
-    result = await service.get_all_tags(session)
-    await session.commit()
-    return result
+    return await service.get_all_tags(session)

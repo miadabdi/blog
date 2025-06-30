@@ -32,5 +32,5 @@ async def create_db_and_tables():
 
 
 async def get_session():
-    async with AsyncSession(async_engine, expire_on_commit=False) as session:
+    async with SessionLocal.begin() as session:
         yield session

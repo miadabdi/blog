@@ -22,9 +22,7 @@ async def create_category(
     service: CategoryServiceDep,
     current_user: Annotated[User, Depends(get_current_active_user)],
 ):
-    result = await service.create_category(category, session)
-    await session.commit()
-    return result
+    return await service.create_category(category, session)
 
 
 @router.patch("/{category_id}", response_model=CategoryPublic)
@@ -36,9 +34,7 @@ async def update_category(
     service: CategoryServiceDep,
     current_user: Annotated[User, Depends(get_current_active_user)],
 ):
-    result = await service.update_category(category_id, category, session)
-    await session.commit()
-    return result
+    return await service.update_category(category_id, category, session)
 
 
 @router.delete("/{category_id}", response_model=CategoryPublic)
@@ -49,22 +45,16 @@ async def delete_category(
     service: CategoryServiceDep,
     current_user: Annotated[User, Depends(get_current_active_user)],
 ):
-    result = await service.delete_category(category_id, session)
-    await session.commit()
-    return result
+    return await service.delete_category(category_id, session)
 
 
 @router.get("/{category_id}", response_model=CategoryPublic)
 async def get_category_by_id(
     category_id: int, session: AsyncSessionDep, service: CategoryServiceDep
 ):
-    result = await service.get_category_by_id(category_id, session)
-    await session.commit()
-    return result
+    return await service.get_category_by_id(category_id, session)
 
 
 @router.get("/", response_model=list[CategoryPublic])
 async def list_categories(session: AsyncSessionDep, service: CategoryServiceDep):
-    result = await service.get_all_categories(session)
-    await session.commit()
-    return result
+    return await service.get_all_categories(session)

@@ -22,18 +22,14 @@ async def create_comment(
     current_user: Annotated[User | None, Depends(get_current_active_user)] = None,
 ):
     user_id = current_user.id if current_user else None
-    result = await service.create_comment(comment, session, user_id, current_user)
-    await session.commit()
-    return result
+    return await service.create_comment(comment, session, user_id, current_user)
 
 
 @router.get("/by-post/{post_id}", response_model=list[CommentPublic])
 async def list_comments(
     post_id: int, session: AsyncSessionDep, service: CommentServiceDep
 ):
-    result = await service.get_comments_by_post(post_id, session)
-    await session.commit()
-    return result
+    return await service.get_comments_by_post(post_id, session)
 
 
 @router.delete("/{comment_id}", response_model=CommentPublic)
@@ -44,6 +40,4 @@ async def delete_comment(
     service: CommentServiceDep,
     current_user: Annotated[User, Depends(get_current_active_user)],
 ):
-    result = await service.delete_comment(comment_id, session)
-    await session.commit()
-    return result
+    return await service.delete_comment(comment_id, session)
