@@ -36,12 +36,12 @@ class Post(GenericModel, table=True):
     categories: list[Category] = Relationship(
         back_populates="posts",
         link_model=PostCategoryLink,
-        sa_relationship_kwargs={"lazy": "joined"},
+        sa_relationship_kwargs={"lazy": "selectin"},
     )
     tags: list[Tag] = Relationship(
         back_populates="posts",
         link_model=PostTagLink,
-        sa_relationship_kwargs={"lazy": "joined"},
+        sa_relationship_kwargs={"lazy": "selectin"},
     )
 
     class Config:  # type: ignore

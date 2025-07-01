@@ -17,6 +17,13 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(ge=10)
 
+    MINIO_SECURE: bool = Field(default=False)
+    MINIO_ENDPOINT: str = Field(min_length=1)
+    MINIO_PORT: int = Field(gt=0, lt=65536)
+    MINIO_ACCESS_KEY: str = Field(min_length=1)
+    MINIO_SECRET_KEY: str = Field(min_length=1)
+    MINIO_BUCKET_NAMES: list[str] = ["images", "files"]
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 
