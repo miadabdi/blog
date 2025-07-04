@@ -49,7 +49,7 @@ class UserService:
             raise InvalidCredentialsException()
 
         access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-        access_token = self.auth_service.create_access_token(
+        access_token = await self.auth_service.create_access_token(
             data={"sub": user.email}, expires_delta=access_token_expires
         )
 

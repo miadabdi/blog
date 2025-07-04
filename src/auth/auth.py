@@ -2,11 +2,11 @@ from datetime import datetime, timedelta, timezone
 from functools import lru_cache, wraps
 from typing import Annotated
 
+import bcrypt
 import jwt
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from jwt.exceptions import InvalidTokenError
-from passlib.context import CryptContext
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from ..common.deps import AsyncSessionDep
@@ -19,7 +19,6 @@ from .models import User
 from .repository import UserRepository, get_UserRepository
 from .schemas import TokenData
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/signin")
 
 
@@ -29,29 +28,54 @@ class AuthService:
 
     @_handle_sync
     def verify_password(self, plain_password: str, hashed_password: str):
-        return pwd_context.verify(plain_password, hashed_password)
+        """
+        Verify a plain password against a hashed password.
+        """
+        plain_password_byte_enc = plain_password.encode("utf-8")
+        hashed_password_byte_enc = hashed_password.encode("utf-8")
+        return bcrypt.checkpw(
+            password=plain_password_byte_enc, hashed_password=hashed_password_byte_enc
+        )
 
     @_handle_sync
     def get_password_hash(self, password: str):
-        return pwd_context.hash(password)
+        """
+        Hash a password using bcrypt.
+        """
+        pwd_bytes = password.encode("utf-8")
+        salt = bcrypt.gensalt()
+        hashed_password = bcrypt.hashpw(password=pwd_bytes, salt=salt)
+        return hashed_password.decode("utf-8")
 
-    def create_access_token(self, data: dict, expires_delta: timedelta | None = None):
+    @_handle_sync
+    def encode_jwt(self, data: dict):
+        """
+        Encode data into a JWT token.
+        """
+        return jwt.encode(data, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+
+    @_handle_sync
+    def decode_jwt(self, token: str) -> dict:
+        """
+        Encode data into a JWT token.
+        """
+        return jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+
+    async def create_access_token(
+        self, data: dict, expires_delta: timedelta | None = None
+    ):
         to_encode = data.copy()
         if expires_delta:
             expire = datetime.now(timezone.utc) + expires_delta
         else:
             expire = datetime.now(timezone.utc) + timedelta(minutes=15)
         to_encode.update({"exp": expire})
-        encoded_jwt = jwt.encode(
-            to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM
-        )
+        encoded_jwt = await self.encode_jwt(to_encode)
         return encoded_jwt
 
     async def verify_user(self, token: str, session: AsyncSession):
         try:
-            payload = jwt.decode(
-                token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
-            )
+            payload = await self.decode_jwt(token)
             username = payload.get("sub")
             if username is None:
                 raise UnauthorizedException()
