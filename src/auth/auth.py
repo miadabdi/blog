@@ -4,7 +4,6 @@ from typing import Annotated
 
 import jwt
 from fastapi import Depends
-from fastapi.concurrency import run_in_threadpool
 from fastapi.security import OAuth2PasswordBearer
 from jwt.exceptions import InvalidTokenError
 from passlib.context import CryptContext
@@ -14,6 +13,7 @@ from ..common.deps import AsyncSessionDep
 from ..common.exceptions.forbidden import ForbiddenException
 from ..common.exceptions.internal import InternalException
 from ..common.exceptions.unauthorized import UnauthorizedException
+from ..common.handle_sync import _handle_sync
 from ..common.settings import settings
 from .models import User
 from .repository import UserRepository, get_UserRepository
@@ -27,14 +27,13 @@ class AuthService:
     def __init__(self, user_repository: UserRepository):
         self.user_repository = user_repository
 
-    async def verify_password(self, plain_password: str, hashed_password: str):
-        password_verified = await run_in_threadpool(
-            pwd_context.verify, plain_password, hashed_password
-        )
-        return password_verified
+    @_handle_sync
+    def verify_password(self, plain_password: str, hashed_password: str):
+        return pwd_context.verify(plain_password, hashed_password)
 
-    async def get_password_hash(self, password: str):
-        return await run_in_threadpool(pwd_context.hash, password)
+    @_handle_sync
+    def get_password_hash(self, password: str):
+        return pwd_context.hash(password)
 
     def create_access_token(self, data: dict, expires_delta: timedelta | None = None):
         to_encode = data.copy()

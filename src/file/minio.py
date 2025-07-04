@@ -16,6 +16,7 @@ from minio.notificationconfig import (
     SuffixFilterRule,
 )
 
+from ..common.handle_sync import _handle_sync
 from ..common.settings import settings
 
 # Configure logging
@@ -172,6 +173,7 @@ class MinioService:
             return False
         return bucket_name.replace("-", "").replace(".", "").isalnum()
 
+    @_handle_sync
     @_handle_minio_errors
     def create_presigned_upload_url(
         self,
@@ -179,7 +181,6 @@ class MinioService:
         object_name: str,
         expires: timedelta = timedelta(hours=1),
         max_file_size: int = 10 * 1024 * 1024,  # 10MB default
-        allowed_content_types: List[str] | None = None,
     ) -> Dict[str, Any]:
         """
         Create a presigned URL for file upload with size and type restrictions.
@@ -189,13 +190,10 @@ class MinioService:
             object_name: Name of the object to upload
             expires: URL expiration time
             max_file_size: Maximum allowed file size in bytes
-            allowed_content_types: List of allowed MIME types
 
         Returns:
             Dict containing presigned URL and upload conditions
         """
-        # Bucket existence is ensured at startup; no per-operation check needed
-
         # Convert to datetime by adding to current time
         expiration_time = datetime.now(timezone.utc) + expires
 
@@ -214,24 +212,17 @@ class MinioService:
             presigned_post = self.client.presigned_post_policy(policy)
 
             logger.info(f"Created presigned upload URL for {bucket_name}/{object_name}")
-            logger.debug(
-                f"Presigned post policy: {presigned_post}, expires in {expires.total_seconds()} seconds"
-            )
-            print(presigned_post.get("url"))
-            print(presigned_post.items())
 
             return {
-                "url": presigned_post["url"],
-                "fields": presigned_post["fields"],
-                "expires_in_seconds": int(expires.total_seconds()),
-                "max_file_size": max_file_size,
-                "allowed_content_types": allowed_content_types,
+                "bucket_name": bucket_name,
+                "form_data": presigned_post,
             }
 
         except Exception as e:
             logger.error(f"Failed to create presigned upload URL: {e}")
             raise HTTPException(status_code=500, detail="Failed to create upload URL")
 
+    @_handle_sync
     @_handle_minio_errors
     def create_presigned_download_url(
         self,
@@ -278,6 +269,7 @@ class MinioService:
                 )
             raise
 
+    @_handle_sync
     @_handle_minio_errors
     def delete_file(self, bucket_name: str, object_name: str) -> bool:
         """
@@ -306,6 +298,7 @@ class MinioService:
                 return False
             raise
 
+    @_handle_sync
     @_handle_minio_errors
     def delete_files(
         self, bucket_name: str, object_names: List[str]
@@ -347,6 +340,7 @@ class MinioService:
             # Return False for all objects if bulk operation fails
             return {obj_name: False for obj_name in object_names}
 
+    @_handle_sync
     @_handle_minio_errors
     def setup_bucket_notification(
         self,
@@ -398,6 +392,7 @@ class MinioService:
             logger.error(f"Failed to set up bucket notification: {e}")
             return False
 
+    @_handle_sync
     @_handle_minio_errors
     def list_objects(
         self,
@@ -450,6 +445,7 @@ class MinioService:
             logger.error(f"Failed to list objects: {e}")
             raise HTTPException(status_code=500, detail="Failed to list objects")
 
+    @_handle_sync
     @_handle_minio_errors
     def get_object_info(self, bucket_name: str, object_name: str) -> Dict[str, Any]:
         """
@@ -486,6 +482,8 @@ class MinioService:
                 )
             raise
 
+    @_handle_sync
+    @_handle_minio_errors
     def health_check(self) -> Dict[str, Any]:
         """
         Perform a health check on the MinIO service.
@@ -513,6 +511,7 @@ class MinioService:
                 "secure": self.secure,
             }
 
+    @_handle_sync
     @_handle_minio_errors
     def create_presigned_put_upload_url(
         self,

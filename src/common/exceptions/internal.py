@@ -27,7 +27,7 @@ async def internal_exception_handler(request: Request, exc: Exception) -> JSONRe
 
     if not isinstance(exc, InternalException):
         return JSONResponse(
-            status_code=500,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={"message": "An unexpected error occurred."},
         )
 
