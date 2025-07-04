@@ -79,18 +79,18 @@ log_config = {
             "formatter": "colored",
             "stream": "ext://sys.stdout",
         },
-        "file": {
-            "class": "logging.FileHandler",
-            "level": "INFO",
-            "formatter": "json",
-            "filename": "fastapi.log",
-            "mode": "a",
-        },
+        # "file": {
+        #     "class": "logging.FileHandler",
+        #     "level": "INFO",
+        #     "formatter": "json",
+        #     "filename": "fastapi.log",
+        #     "mode": "a",
+        # },
     },
     "loggers": {
-        "app": {"handlers": ["console", "file"], "level": "DEBUG", "propagate": False},
+        "app": {"handlers": ["console"], "level": "DEBUG", "propagate": False},
     },
-    "root": {"handlers": ["console", "file"], "level": "DEBUG"},
+    "root": {"handlers": ["console"], "level": "DEBUG"},
 }
 
 
