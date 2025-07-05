@@ -38,6 +38,18 @@ target_metadata = SQLModel.metadata
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
 
+url_tokens = {
+    "DB_USER": os.getenv("POSTGRES_USER", ""),
+    "DB_PASS": os.getenv("POSTGRES_PASSWORD", ""),
+    "DB_HOST": os.getenv("POSTGRES_HOST", ""),
+    "DB_PORT": os.getenv("POSTGRES_PORT", 5432),
+    "DB_NAME": os.getenv("POSTGRES_DB", ""),
+}
+
+url = config.get_main_option("sqlalchemy.url") or ""
+
+url = re.sub(r"\${(.+?)}", lambda m: url_tokens[m.group(1)], url)
+
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
@@ -51,7 +63,7 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = config.get_main_option("sqlalchemy.url")
+    # url = config.get_main_option("sqlalchemy.url")
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -71,19 +83,52 @@ def run_migrations_online() -> None:
 
     """
 
-    url_tokens = {
-        "DB_USER": os.getenv("POSTGRES_USER", ""),
-        "DB_PASS": os.getenv("POSTGRES_PASSWORD", ""),
-        "DB_HOST": os.getenv("POSTGRES_HOST", ""),
-        "DB_PORT": os.getenv("POSTGRES_PORT", 5432),
-        "DB_NAME": os.getenv("POSTGRES_DB", ""),
-    }
+    from alembic.operations import ops
 
-    print(url_tokens)
+    def _filter_drop_indexes(directives, tables_dropped):
+        # given a set of (tablename, schemaname) to be dropped, filter
+        # out DropIndexOp from the list of directives and yield the result.
 
-    url = config.get_main_option("sqlalchemy.url") or ""
+        for directive in directives:
+            # ModifyTableOps is a container of ALTER TABLE types of
+            # commands.  process those in place recursively.
+            if (
+                isinstance(directive, ops.ModifyTableOps)
+                and (directive.table_name, directive.schema) in tables_dropped
+            ):
+                directive.ops = list(
+                    _filter_drop_indexes(directive.ops, tables_dropped)
+                )
 
-    url = re.sub(r"\${(.+?)}", lambda m: url_tokens[m.group(1)], url)
+                # if we emptied out the directives, then skip the
+                # container altogether.
+                if not directive.ops:
+                    continue
+            elif (
+                isinstance(directive, ops.DropIndexOp)
+                and (directive.table_name, directive.schema) in tables_dropped
+            ):
+                # we found a target DropIndexOp.   keep looping
+                continue
+
+            # otherwise if not filtered, yield out the directive
+            yield directive
+
+    def process_revision_directives(context, revision, directives):
+        script = directives[0]
+
+        # process both "def upgrade()", "def downgrade()"
+        for directive in (script.upgrade_ops, script.downgrade_ops):
+            # make a set of tables that are being dropped within
+            # the migration function
+            tables_dropped = set()
+            for op in directive.ops:
+                if isinstance(op, ops.DropTableOp):
+                    tables_dropped.add((op.table_name, op.schema))
+
+            # now rewrite the list of "ops" such that DropIndexOp
+            # is removed for those tables.   Needs a recursive function.
+            directive.ops = list(_filter_drop_indexes(directive.ops, tables_dropped))
 
     # connectable = engine_from_config(
     #     config.get_section(config.config_ini_section, {}),
@@ -94,7 +139,11 @@ def run_migrations_online() -> None:
     connectable = create_engine(url)
 
     with connectable.connect() as connection:
-        context.configure(connection=connection, target_metadata=target_metadata)
+        context.configure(
+            connection=connection,
+            target_metadata=target_metadata,
+            process_revision_directives=process_revision_directives,
+        )
 
         with context.begin_transaction():
             context.run_migrations()
