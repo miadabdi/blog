@@ -1,5 +1,6 @@
 import logging
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 
 from fastapi import FastAPI
 
@@ -14,7 +15,7 @@ from .file.router import router as file_router
 from .post.router import router as post_router
 from .tag.router import router as tag_router
 
-if settings.FASTAPI_ENV == "development":
+if settings.PYTHON_ENV == "development":
     # Enable debug mode for asyncio if DEBUG is True
     import asyncio
 
@@ -52,6 +53,19 @@ async def lifespan_with_db_cleanup(app: FastAPI):
 app = FastAPI(lifespan=lifespan_with_db_cleanup)
 
 register_exceptions(app)
+
+
+@app.get("/health", tags=["Health Check"])
+async def health_check():
+    """
+    Health check endpoint to verify if the service is running.
+    """
+    return {
+        "status": "ok",
+        "message": "Service is running",
+        "current_date": datetime.now(timezone.utc),
+    }
+
 
 app.include_router(auth_router)
 app.include_router(post_router)

@@ -7,9 +7,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     app_name: str = "Blog"
 
-    FASTAPI_ENV: str = Field(
+    PYTHON_ENV: str = Field(
         default="development",
-        description="Environment for the FastAPI application (development, production, etc.)",
+        description="Environment for the Python application (development, production, etc.)",
     )
 
     POSTGRES_HOST: str = Field(min_length=1)
