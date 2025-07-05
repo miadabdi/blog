@@ -8,10 +8,19 @@ from .category.router import router as category_router
 from .comment.router import router as comment_router
 from .common.db import create_db_and_tables
 from .common.exceptions.register_exceptions import register_exceptions
+from .common.settings import settings
 from .configure_logging import configure_logging
 from .file.router import router as file_router
 from .post.router import router as post_router
 from .tag.router import router as tag_router
+
+if settings.FASTAPI_ENV == "development":
+    # Enable debug mode for asyncio if DEBUG is True
+    import asyncio
+
+    # Set the asyncio event loop to debug mode
+    # This will help in debugging issues related to async code
+    asyncio.get_event_loop().set_debug(True)
 
 configure_logging()
 
