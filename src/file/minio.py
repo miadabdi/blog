@@ -4,7 +4,6 @@ from datetime import datetime, timedelta, timezone
 from functools import lru_cache, wraps
 from typing import Any, Dict, List
 
-from fastapi import HTTPException
 from minio import Minio
 from minio.datatypes import PostPolicy
 from minio.deleteobjects import DeleteObject
@@ -16,6 +15,8 @@ from minio.notificationconfig import (
     SuffixFilterRule,
 )
 
+from ..common.exceptions.internal import InternalException
+from ..common.exceptions.not_found import NotFoundException
 from ..common.handle_sync import _handle_sync
 from ..common.settings import settings
 
@@ -119,13 +120,13 @@ class MinioService:
                 return func(self, *args, **kwargs)
             except S3Error as e:
                 logger.error(f"MinIO S3 error in {func.__name__}: {e}")
-                raise HTTPException(status_code=400, detail=f"Storage error: {e}")
+                raise InternalException(message=f"Storage error: {e}")
             except InvalidResponseError as e:
                 logger.error(f"MinIO invalid response in {func.__name__}: {e}")
-                raise HTTPException(status_code=500, detail="Storage service error")
+                raise InternalException(message="Storage service error")
             except Exception as e:
                 logger.error(f"Unexpected error in {func.__name__}: {e}")
-                raise HTTPException(status_code=500, detail="Internal server error")
+                raise InternalException(message="Internal server error")
 
         return wrapper
 
@@ -220,7 +221,7 @@ class MinioService:
 
         except Exception as e:
             logger.error(f"Failed to create presigned upload URL: {e}")
-            raise HTTPException(status_code=500, detail="Failed to create upload URL")
+            raise InternalException(message="Failed to create upload URL")
 
     @_handle_sync
     @_handle_minio_errors
@@ -264,9 +265,7 @@ class MinioService:
 
         except S3Error as e:
             if e.code == "NoSuchKey":
-                raise HTTPException(
-                    status_code=404, detail=f"Object '{object_name}' not found"
-                )
+                raise NotFoundException(resource="Object", resource_id=object_name)
             raise
 
     @_handle_sync
@@ -443,7 +442,7 @@ class MinioService:
 
         except Exception as e:
             logger.error(f"Failed to list objects: {e}")
-            raise HTTPException(status_code=500, detail="Failed to list objects")
+            raise InternalException(message="Failed to list objects")
 
     @_handle_sync
     @_handle_minio_errors
@@ -477,8 +476,9 @@ class MinioService:
 
         except S3Error as e:
             if e.code == "NoSuchKey":
-                raise HTTPException(
-                    status_code=404, detail=f"Object '{object_name}' not found"
+                raise NotFoundException(
+                    resource="Object",
+                    resource_id=object_name,
                 )
             raise
 
@@ -547,7 +547,7 @@ class MinioService:
 
         except Exception as e:
             logger.error(f"Failed to create presigned PUT upload URL: {e}")
-            raise HTTPException(status_code=500, detail="Failed to create upload URL")
+            raise InternalException(message="Failed to create upload URL")
 
 
 # Factory function for dependency injection in FastAPI
