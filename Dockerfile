@@ -1,8 +1,4 @@
-# Use a more specific base image for better security and predictability
-FROM python:3.13.5-slim
-
-# Create a non-root user for security
-RUN groupadd -r appuser && useradd -r -g appuser appuser
+FROM python:3.13.5-slim-bookworm AS builder
 
 # Set working directory
 WORKDIR /code
@@ -12,7 +8,19 @@ COPY requirements.txt .
 
 # Install Python dependencies
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-compile --no-cache-dir -r requirements.txt
+    pip install --prefix=/install --no-compile --no-cache-dir -r requirements.txt
+
+
+FROM python:3.13.5-slim-bookworm
+
+# Create a non-root user for security
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+
+# Set working directory
+WORKDIR /code
+
+# Copy only built Python packages
+COPY --from=builder /install /usr/local
 
 # Copy application code
 COPY . .
