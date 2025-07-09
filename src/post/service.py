@@ -131,4 +131,3 @@ def get_PostService(
     tag_service: Annotated[TagService, Depends(get_TagService)],
 ) -> PostService:
     return PostService(postRepository, category_service, tag_service)
-    return PostService(postRepository, category_service, tag_service)

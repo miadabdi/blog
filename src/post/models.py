@@ -30,18 +30,18 @@ class Post(GenericModel, table=True):
     author_id: int = Field(foreign_key="users.id", nullable=False)
     author: User = Relationship(
         back_populates="posts",
-        sa_relationship_kwargs={"lazy": "joined"},
+        sa_relationship_kwargs={"lazy": "select"},
     )
 
     categories: list[Category] = Relationship(
         back_populates="posts",
         link_model=PostCategoryLink,
-        sa_relationship_kwargs={"lazy": "selectin"},
+        sa_relationship_kwargs={"lazy": "select"},
     )
     tags: list[Tag] = Relationship(
         back_populates="posts",
         link_model=PostTagLink,
-        sa_relationship_kwargs={"lazy": "selectin"},
+        sa_relationship_kwargs={"lazy": "select"},
     )
 
     class Config:  # type: ignore

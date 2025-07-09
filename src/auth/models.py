@@ -29,6 +29,6 @@ class User(GenericModel, table=True):
     posts: list["Post"] = Relationship(
         back_populates="author",
         sa_relationship_kwargs={
-            "lazy": "selectin",
+            "lazy": "noload",
         },
     )
