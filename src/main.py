@@ -1,15 +1,21 @@
 import logging
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
+from typing import Annotated
 
-from fastapi import FastAPI
+import anyio
+import anyio.to_thread
+from anyio.to_thread import current_default_thread_limiter
+from fastapi import Depends, FastAPI
 
+from .auth.auth import authorize, get_current_active_user
+from .auth.models import User
 from .auth.router import router as auth_router
 from .category.router import router as category_router
 from .comment.router import router as comment_router
-from .common.db import create_db_and_tables
 from .common.exceptions.register_exceptions import register_exceptions
 from .common.settings import settings
+from .common.user_role import UserRole
 from .configure_logging import configure_logging
 from .file.router import router as file_router
 from .post.router import router as post_router
@@ -32,7 +38,9 @@ logger = logging.getLogger(__name__)
 async def lifespan_with_db_cleanup(app: FastAPI):
     # Startup
     logger.info("Starting up...")
-    await create_db_and_tables()
+
+    limiter = anyio.to_thread.current_default_thread_limiter()
+    limiter.total_tokens = 100
 
     yield
 
@@ -73,3 +81,18 @@ app.include_router(category_router)
 app.include_router(tag_router)
 app.include_router(file_router)
 app.include_router(comment_router)
+
+
+async def get_thread_limiter():
+    return current_default_thread_limiter()
+
+
+@app.get("/threads/active")
+@authorize(role=[UserRole.ADMIN])
+async def get_active_threads(
+    current_user: Annotated[User, Depends(get_current_active_user)],
+    limiter=Depends(get_thread_limiter),
+):
+    threads_in_use = limiter.borrowed_tokens
+
+    return {"active_threads": threads_in_use, "total_tokens": limiter.total_tokens}
