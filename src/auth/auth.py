@@ -6,7 +6,11 @@ import bcrypt
 import jwt
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
-from jwt.exceptions import InvalidTokenError
+from jwt.exceptions import (
+    ExpiredSignatureError,
+    InvalidSignatureError,
+    InvalidTokenError,
+)
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from ..common.deps import AsyncSessionDep
@@ -80,7 +84,7 @@ class AuthService:
             if username is None:
                 raise UnauthorizedException()
             token_data = TokenData(username=username)
-        except InvalidTokenError:
+        except (InvalidTokenError, ExpiredSignatureError, InvalidSignatureError):
             raise UnauthorizedException()
         except Exception:
             raise InternalException()
@@ -115,7 +119,8 @@ async def get_current_user(
     session: AsyncSessionDep,
     auth_service: Annotated[AuthService, Depends(get_AuthService)],
 ) -> User:
-    return await auth_service.verify_user(token, session)
+    result = await auth_service.verify_user(token, session)
+    return result
 
 
 async def get_current_active_user(
