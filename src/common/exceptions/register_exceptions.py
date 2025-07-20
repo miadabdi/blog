@@ -1,5 +1,4 @@
 import datetime
-from typing import Union
 
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
@@ -9,43 +8,44 @@ from ..http_responses.error_response import ErrorCodes, ErrorResponse
 from .exceptions import AppBaseException
 
 
-async def handle_app_exception(
-    request: Request, exc: Union[Exception, AppBaseException]
-) -> JSONResponse:
-    # Cast to AppBaseException since we know it will be that type when called
-    app_exc = exc if isinstance(exc, AppBaseException) else AppBaseException()
-    error_model = app_exc.to_response_model(request)
+async def handle_app_exception(request: Request, exc: AppBaseException):
+    error_model = exc.to_response_model(request)
     return JSONResponse(
-        status_code=app_exc.status_code,
+        status_code=exc.status_code,
         content=error_model.model_dump(mode="json"),
     )
 
 
-async def validation_exception_handler(
-    request: Request, exc: Union[Exception, RequestValidationError]
-):
-    # Cast to AppBaseException since we know it will be that type when called
-    validation_exc = (
-        exc
-        if isinstance(exc, RequestValidationError)
-        else RequestValidationError(exc.errors())  # type: ignore[call-arg]
-    )
+async def handle_validation_exception(request: Request, exc: RequestValidationError):
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content=ErrorResponse(
             code=ErrorCodes.VALIDATION_ERROR,
             message="Validation error",
             status=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            timestamp=datetime.datetime.now(
-                datetime.timezone.utc
-            ),  # RFC 3339-compliant
+            timestamp=datetime.datetime.now(datetime.timezone.utc),
             path=request.url.path,
-            detail=list(validation_exc.errors()),
-            body=validation_exc.body,
+            detail=list(exc.errors()),
+            body=exc.body,
         ).model_dump(mode="json"),
     )
 
 
+async def handle_internal_exception(request: Request, exc: Exception):
+    internal_exc = AppBaseException(detail={"message": str(exc)})
+    return await handle_app_exception(request, internal_exc)
+
+
+async def global_exception_handler(request: Request, exc: Exception):
+    if isinstance(exc, AppBaseException):
+        return await handle_app_exception(request, exc)
+    elif isinstance(exc, RequestValidationError):
+        return await handle_validation_exception(request, exc)
+    else:
+        return await handle_internal_exception(request, exc)
+
+
 def register_exception_handlers(app: FastAPI):
-    app.add_exception_handler(AppBaseException, handle_app_exception)
-    app.add_exception_handler(RequestValidationError, validation_exception_handler)
+    app.add_exception_handler(Exception, global_exception_handler)
+    # weirdly, this is needed to handle validation errors globally
+    app.add_exception_handler(RequestValidationError, global_exception_handler)

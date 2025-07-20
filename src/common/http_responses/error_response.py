@@ -38,7 +38,7 @@ class ErrorResponse(BaseResponse):
     code: ErrorCodes
 
     # error related data
-    detail: list[dict[str, Any]] | dict[str, Any] | None = None
+    detail: list[dict[str, Any]] | dict[str, Any] | str | None = None
     body: Any | None = None
 
 
