@@ -5,9 +5,11 @@ from fastapi import Depends
 from sqlalchemy.exc import IntegrityError
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from ..common.exceptions.conflict import ConflictException
-from ..common.exceptions.internal import InternalException
-from ..common.exceptions.not_found import NotFoundException
+from ..common.exceptions.exceptions import (
+    DuplicateEntryException,
+    EntityNotFoundException,
+    InternalException,
+)
 from .models import Tag
 from .repository import TagRepository, get_TagRepository
 from .schemas import CreateTag, UpdateTag
@@ -21,9 +23,8 @@ class TagService:
         try:
             tag_record = await self.repository.create(data.model_dump(), session)
         except IntegrityError:
-            raise ConflictException(
-                resource=Tag.__name__,
-                message="Duplicate name or slug",
+            raise DuplicateEntryException(
+                resource=Tag.__name__, field="name", value=data.name
             )
         except Exception as e:
             raise InternalException(
@@ -39,9 +40,8 @@ class TagService:
         try:
             updated_tag = await self.repository.update(id, tag_data, session)
         except IntegrityError:
-            raise ConflictException(
-                resource=Tag.__name__,
-                message="Duplicate name or slug",
+            raise DuplicateEntryException(
+                resource=Tag.__name__, field="name", value=update_data.name
             )
         except Exception as e:
             raise InternalException(
@@ -58,7 +58,7 @@ class TagService:
     async def get_tag_by_id(self, id: int, session: AsyncSession) -> Tag:
         result = await self.repository.get_by_id(id, session)
         if result is None:
-            raise NotFoundException(Tag.__name__, str(id))
+            raise EntityNotFoundException(Tag.__name__, str(id))
         return result
 
     async def get_all_tags(self, session: AsyncSession) -> list[Tag]:

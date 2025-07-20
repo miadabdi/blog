@@ -5,9 +5,11 @@ from fastapi import Depends
 from sqlalchemy.exc import IntegrityError
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from ..common.exceptions.conflict import ConflictException
-from ..common.exceptions.internal import InternalException
-from ..common.exceptions.not_found import NotFoundException
+from ..common.exceptions.exceptions import (
+    DuplicateEntryException,
+    EntityNotFoundException,
+    InternalException,
+)
 from .models import Category
 from .repository import CategoryRepository, get_CategoryRepository
 from .schemas import CreateCategory, UpdateCategory
@@ -23,9 +25,10 @@ class CategoryService:
         try:
             category_record = await self.repository.create(data.model_dump(), session)
         except IntegrityError:
-            raise ConflictException(
+            raise DuplicateEntryException(
+                field="name",
+                value=f"{data.name}",
                 resource=Category.__name__,
-                message="Duplicate name or slug",
             )
         except Exception as e:
             raise InternalException(
@@ -41,13 +44,14 @@ class CategoryService:
         try:
             updated_category = await self.repository.update(id, category_data, session)
         except IntegrityError:
-            raise ConflictException(
+            raise DuplicateEntryException(
+                field="name",
+                value=f"{update_data.name}",
                 resource=Category.__name__,
-                message="Duplicate name or slug",
             )
         except Exception as e:
             raise InternalException(
-                message="An unexpected error occurred while creating the category.",
+                message="An unexpected error occurred while updating the category.",
                 underlying_error=e,
             )
         return updated_category
@@ -59,7 +63,7 @@ class CategoryService:
     async def get_category_by_id(self, id: int, session: AsyncSession) -> Category:
         result = await self.repository.get_by_id(id, session)
         if result is None:
-            raise NotFoundException(Category.__name__, str(id))
+            raise EntityNotFoundException(str(id), Category.__name__)
         return result
 
     async def get_all_categories(self, session: AsyncSession) -> list[Category]:

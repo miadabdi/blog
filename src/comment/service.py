@@ -5,8 +5,7 @@ from fastapi import Depends, HTTPException, status
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from ..auth.models import User
-from ..common.exceptions.internal import InternalException
-from ..common.exceptions.not_found import NotFoundException
+from ..common.exceptions.exceptions import EntityNotFoundException, InternalException
 from .models import Comment
 from .repository import CommentRepository, get_CommentRepository
 from .schemas import CreateComment
@@ -57,7 +56,10 @@ class CommentService:
     ) -> Comment:
         comment = await self.repository.get_by_id(comment_id, session)
         if not comment:
-            raise NotFoundException(Comment.__name__, str(comment_id))
+            raise EntityNotFoundException(
+                str(comment_id),
+                Comment.__name__,
+            )
 
         await session.delete(comment)
         return comment

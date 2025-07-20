@@ -13,7 +13,7 @@ from .auth.models import User
 from .auth.router import router as auth_router
 from .category.router import router as category_router
 from .comment.router import router as comment_router
-from .common.exceptions.register_exceptions import register_exceptions
+from .common.exceptions.register_exceptions import register_exception_handlers
 from .common.settings import settings
 from .common.user_role import UserRole
 from .configure_logging import configure_logging
@@ -60,7 +60,7 @@ async def lifespan_with_db_cleanup(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan_with_db_cleanup)
 
-register_exceptions(app)
+register_exception_handlers(app)
 
 
 @app.get("/health", tags=["Health Check"])

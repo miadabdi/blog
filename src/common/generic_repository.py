@@ -3,7 +3,7 @@ from typing import Any, Dict, Generic, Optional, Type, TypeVar
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from ..common.exceptions.not_found import NotFoundException
+from ..common.exceptions.exceptions import EntityNotFoundException
 from .generic_model import GenericModel
 
 T = TypeVar("T", bound=GenericModel)
@@ -42,9 +42,9 @@ class GenericRepository(Generic[T]):
         """Update a record by ID"""
         record = await self.get_by_id(id, session)
         if record is None:
-            raise NotFoundException(
-                resource=self.model.__name__,
+            raise EntityNotFoundException(
                 resource_id=str(id),
+                resource=self.model.__name__,
             )
 
         record.sqlmodel_update(data)
@@ -57,9 +57,9 @@ class GenericRepository(Generic[T]):
         """Delete a record by ID"""
         record = await self.get_by_id(id, session)
         if record is None:
-            raise NotFoundException(
-                resource=self.model.__name__,
+            raise EntityNotFoundException(
                 resource_id=str(id),
+                resource=self.model.__name__,
             )
 
         await session.delete(record)

@@ -7,9 +7,11 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from ..auth.models import User
 from ..category.service import CategoryService, get_CategoryService
-from ..common.exceptions.conflict import ConflictException
-from ..common.exceptions.internal import InternalException
-from ..common.exceptions.not_found import NotFoundException
+from ..common.exceptions.exceptions import (
+    DuplicateEntryException,
+    EntityNotFoundException,
+    InternalException,
+)
 from ..tag.service import TagService, get_TagService
 from .models import Post
 from .repository import PostRepository, get_PostRepository
@@ -52,9 +54,10 @@ class PostService:
                 session,
             )
         except IntegrityError:
-            raise ConflictException(
+            raise DuplicateEntryException(
                 resource=Post.__name__,
-                message="Duplicate title",
+                field="title",
+                value=data.title,
             )
         except Exception as e:
             raise InternalException(
@@ -71,7 +74,7 @@ class PostService:
         try:
             updated_post = await self.repository.get_by_id(id, session)
             if updated_post is None:
-                raise NotFoundException(Post.__name__, str(id))
+                raise EntityNotFoundException(Post.__name__, str(id))
 
             # Prepare related records if provided
             categories = None
@@ -99,9 +102,10 @@ class PostService:
                 tags=tags,
             )
         except IntegrityError:
-            raise ConflictException(
+            raise DuplicateEntryException(
                 resource=Post.__name__,
-                message="Duplicate title",
+                field="title",
+                value=update_data.title,
             )
         except Exception as e:
             raise InternalException(
@@ -119,7 +123,7 @@ class PostService:
         result = await self.repository.get_by_id(id, session)
 
         if result is None:
-            raise NotFoundException(Post.__name__, str(id))
+            raise EntityNotFoundException(Post.__name__, str(id))
 
         return result
 

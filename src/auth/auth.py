@@ -14,16 +14,18 @@ from jwt.exceptions import (
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from ..common.deps import AsyncSessionDep
-from ..common.exceptions.forbidden import ForbiddenException
-from ..common.exceptions.internal import InternalException
-from ..common.exceptions.unauthorized import UnauthorizedException
+from ..common.exceptions.exceptions import (
+    ForbiddenException,
+    InternalException,
+    UnauthorizedException,
+)
 from ..common.handle_sync import _handle_sync
 from ..common.settings import settings
 from .models import User
 from .repository import UserRepository, get_UserRepository
 from .schemas import TokenData
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/signin")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
 
 
 class AuthService:

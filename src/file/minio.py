@@ -15,8 +15,7 @@ from minio.notificationconfig import (
     SuffixFilterRule,
 )
 
-from ..common.exceptions.internal import InternalException
-from ..common.exceptions.not_found import NotFoundException
+from ..common.exceptions.exceptions import EntityNotFoundException, InternalException
 from ..common.handle_sync import _handle_sync
 from ..common.settings import settings
 
@@ -265,7 +264,9 @@ class MinioService:
 
         except S3Error as e:
             if e.code == "NoSuchKey":
-                raise NotFoundException(resource="Object", resource_id=object_name)
+                raise EntityNotFoundException(
+                    resource="Object", resource_id=object_name
+                )
             raise
 
     @_handle_sync
@@ -476,7 +477,7 @@ class MinioService:
 
         except S3Error as e:
             if e.code == "NoSuchKey":
-                raise NotFoundException(
+                raise EntityNotFoundException(
                     resource="Object",
                     resource_id=object_name,
                 )

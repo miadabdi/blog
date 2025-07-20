@@ -6,8 +6,10 @@ from fastapi import Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from ..common.exceptions.conflict import ConflictException
-from ..common.exceptions.invalid_credintials import InvalidCredentialsException
+from ..common.exceptions.exceptions import (
+    DuplicateEntryException,
+    InvalidCredentialsException,
+)
 from ..common.settings import settings
 from .auth import AuthService, get_AuthService
 from .models import User
@@ -27,9 +29,10 @@ class UserService:
     async def sign_up(self, form_data: SignUp, session: AsyncSession):
         dup = await self.get_user_by_email(form_data.email, session)
         if dup:
-            raise ConflictException(
+            raise DuplicateEntryException(
                 resource=User.__name__,
-                message="User with this email already exists.",
+                field="email",
+                value=form_data.email,
             )
 
         hashed_password = await self.auth_service.get_password_hash(form_data.password)
