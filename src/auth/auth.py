@@ -17,6 +17,8 @@ from ..common.deps import AsyncSessionDep
 from ..common.exceptions.exceptions import (
     ForbiddenException,
     InternalException,
+    InvalidPayloadException,
+    InvalidTokenException,
     UnauthorizedException,
 )
 from ..common.handle_sync import _handle_sync
@@ -84,10 +86,10 @@ class AuthService:
             payload = await self.decode_jwt(token)
             username = payload.get("sub")
             if username is None:
-                raise UnauthorizedException()
+                raise InvalidPayloadException()
             token_data = TokenData(username=username)
         except (InvalidTokenError, ExpiredSignatureError, InvalidSignatureError):
-            raise UnauthorizedException()
+            raise InvalidTokenException()
         except Exception:
             raise InternalException()
 
