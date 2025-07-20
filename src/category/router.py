@@ -1,10 +1,16 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Body, Depends
+from fastapi import APIRouter, Body, Depends, Request, status
 
 from ..auth.auth import authorize, get_current_active_user
 from ..auth.models import User
 from ..common.deps import AsyncSessionDep
+from ..common.http_responses.doc_responses import (
+    ResponseErrorDoc,
+    ResponseSuccessDoc,
+)
+from ..common.http_responses.success_response import SuccessCodes
+from ..common.http_responses.success_result import SuccessResult
 from ..common.user_role import UserRole
 from .schemas import CategoryPublic, CreateCategory, UpdateCategory
 from .service import CategoryService, get_CategoryService
@@ -14,18 +20,52 @@ router = APIRouter(prefix="/category", tags=["category"])
 CategoryServiceDep = Annotated[CategoryService, Depends(get_CategoryService)]
 
 
-@router.post("/", response_model=CategoryPublic)
+@router.post(
+    "/",
+    response_model=SuccessResult[CategoryPublic],
+    responses={
+        **ResponseSuccessDoc.HTTP_201_CREATED(
+            "Category created successfully", CategoryPublic
+        ),
+        **ResponseErrorDoc.HTTP_500_INTERNAL_SERVER_ERROR(),
+        **ResponseErrorDoc.HTTP_409_CONFLICT(),
+    },
+)
 @authorize(role=[UserRole.ADMIN])
 async def create_category(
     category: Annotated[CreateCategory, Body()],
     session: AsyncSessionDep,
     service: CategoryServiceDep,
     current_user: Annotated[User, Depends(get_current_active_user)],
+    request: Request,
 ):
-    return await service.create_category(category, session)
+    created_category = await service.create_category(category, session)
+
+    public_category = CategoryPublic.model_validate(created_category)
+
+    result = SuccessResult[CategoryPublic](
+        code=SuccessCodes.CREATED,
+        message="Category created successfully",
+        status_code=status.HTTP_201_CREATED,
+        data=public_category,
+    )
+
+    return result.to_json_response(request)
 
 
-@router.patch("/{category_id}", response_model=CategoryPublic)
+@router.patch(
+    "/{category_id}",
+    response_model=CategoryPublic,
+    responses={
+        **ResponseSuccessDoc.HTTP_200_OK(
+            "Category updated successfully", CategoryPublic
+        ),
+        **ResponseErrorDoc.HTTP_500_INTERNAL_SERVER_ERROR(),
+        **ResponseErrorDoc.HTTP_409_CONFLICT(),
+        **ResponseErrorDoc.HTTP_404_NOT_FOUND(),
+        **ResponseErrorDoc.HTTP_403_FORBIDDEN(),
+    },
+)
 @authorize(role=[UserRole.ADMIN])
 async def update_category(
     category_id: int,
@@ -33,28 +73,110 @@ async def update_category(
     session: AsyncSessionDep,
     service: CategoryServiceDep,
     current_user: Annotated[User, Depends(get_current_active_user)],
+    request: Request,
 ):
-    return await service.update_category(category_id, category, session)
+    updated_category = await service.update_category(category_id, category, session)
+
+    public_category = CategoryPublic.model_validate(updated_category)
+
+    result = SuccessResult[CategoryPublic](
+        code=SuccessCodes.SUCCESS,
+        message="Category Updated successfully",
+        status_code=status.HTTP_200_OK,
+        data=public_category,
+    )
+
+    return result.to_json_response(request)
 
 
-@router.delete("/{category_id}", response_model=CategoryPublic)
+@router.delete(
+    "/{category_id}",
+    response_model=SuccessResult[CategoryPublic],
+    responses={
+        **ResponseSuccessDoc.HTTP_200_OK(
+            "Category deleted successfully", CategoryPublic
+        ),
+        **ResponseErrorDoc.HTTP_500_INTERNAL_SERVER_ERROR(),
+        **ResponseErrorDoc.HTTP_404_NOT_FOUND(),
+        **ResponseErrorDoc.HTTP_403_FORBIDDEN(),
+    },
+)
 @authorize(role=[UserRole.ADMIN])
 async def delete_category(
     category_id: int,
     session: AsyncSessionDep,
     service: CategoryServiceDep,
     current_user: Annotated[User, Depends(get_current_active_user)],
+    request: Request,
 ):
-    return await service.delete_category(category_id, session)
+    deleted_category = await service.delete_category(category_id, session)
+
+    public_category = CategoryPublic.model_validate(deleted_category)
+    result = SuccessResult[CategoryPublic](
+        code=SuccessCodes.SUCCESS,
+        message="Category Deleted successfully",
+        status_code=status.HTTP_200_OK,
+        data=public_category,
+    )
+
+    return result.to_json_response(request)
 
 
-@router.get("/{category_id}", response_model=CategoryPublic)
+@router.get(
+    "/{category_id}",
+    response_model=SuccessResult[CategoryPublic],
+    responses={
+        **ResponseSuccessDoc.HTTP_200_OK(
+            "Category fetched successfully", CategoryPublic
+        ),
+        **ResponseErrorDoc.HTTP_500_INTERNAL_SERVER_ERROR(),
+        **ResponseErrorDoc.HTTP_404_NOT_FOUND(),
+    },
+)
 async def get_category_by_id(
-    category_id: int, session: AsyncSessionDep, service: CategoryServiceDep
+    category_id: int,
+    session: AsyncSessionDep,
+    service: CategoryServiceDep,
+    request: Request,
 ):
-    return await service.get_category_by_id(category_id, session)
+    category = await service.get_category_by_id(category_id, session)
+
+    public_category = CategoryPublic.model_validate(category)
+
+    result = SuccessResult[CategoryPublic](
+        code=SuccessCodes.SUCCESS,
+        message="Category fetched successfully",
+        status_code=status.HTTP_200_OK,
+        data=public_category,
+    )
+
+    return result.to_json_response(request)
 
 
-@router.get("/", response_model=list[CategoryPublic])
-async def list_categories(session: AsyncSessionDep, service: CategoryServiceDep):
-    return await service.get_all_categories(session)
+@router.get(
+    "/",
+    response_model=SuccessResult[list[CategoryPublic]],
+    responses={
+        **ResponseSuccessDoc.HTTP_200_OK(
+            "Categories fetched successfully", CategoryPublic
+        ),
+        **ResponseErrorDoc.HTTP_500_INTERNAL_SERVER_ERROR(),
+    },
+)
+async def list_categories(
+    session: AsyncSessionDep, service: CategoryServiceDep, request: Request
+):
+    categories = await service.get_all_categories(session)
+
+    public_categories = [
+        CategoryPublic.model_validate(category) for category in categories
+    ]
+
+    result = SuccessResult[list[CategoryPublic]](
+        code=SuccessCodes.SUCCESS,
+        message="Category fetched successfully",
+        status_code=status.HTTP_200_OK,
+        data=public_categories,
+    )
+
+    return result.to_json_response(request)
