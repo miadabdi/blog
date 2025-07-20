@@ -1,8 +1,6 @@
 from enum import StrEnum
 from typing import Any
 
-from pydantic import BaseModel
-
 from .base import BaseResponse
 
 
@@ -21,6 +19,7 @@ class ErrorCodes(StrEnum):
     UNAUTHORIZED = "UNAUTHORIZED"
     FORBIDDEN = "FORBIDDEN"
     DATABASE_ERROR = "DATABASE_ERROR"
+    VALIDATION_ERROR = "VALIDATION_ERROR"
 
 
 class ErrorResponse(BaseResponse):
@@ -37,8 +36,11 @@ class ErrorResponse(BaseResponse):
     """
 
     code: ErrorCodes
-    data: dict[str, Any] | None = None
+
+    # error related data
+    detail: list[dict[str, Any]] | dict[str, Any] | None = None
+    body: Any | None = None
 
 
-class ErrorResponseWrapper(BaseModel):
-    detail: ErrorResponse
+class ErrorResponseWrapper(ErrorResponse):
+    pass

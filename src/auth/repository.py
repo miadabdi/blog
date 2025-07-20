@@ -10,7 +10,6 @@ from .models import User
 
 class UserRepository(GenericRepository[User]):
     def __init__(self):
-        print("User REPO CREATED")
         super().__init__(User)
 
     async def get_by_email(self, email: str, session: AsyncSession) -> Optional[User]:

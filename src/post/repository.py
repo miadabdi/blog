@@ -6,7 +6,6 @@ from .models import Post
 
 class PostRepository(GenericRepository[Post]):
     def __init__(self):
-        print("POST REPO CREATED")
         super().__init__(Post)
 
     async def update_with_m2m(

@@ -1,5 +1,7 @@
 import datetime
 
+from fastapi import Request
+
 from ...configure_logging import logging
 from ..http_responses.error_response import ErrorCodes, ErrorResponse
 
@@ -15,14 +17,14 @@ class AppBaseException(Exception):
         code: ErrorCodes = ErrorCodes.INTERNAL_SERVER_ERROR,
         message: str = "An unexpected error occurred.",
         status_code: int = 500,
-        data: dict | None = None,
+        detail: dict | None = None,
     ):
         self.code = code
         self.message = message
         self.status_code = status_code
-        self.data = data or {}
+        self.detail = detail or {}
 
-    def to_response_model(self, path: str = "") -> ErrorResponse:
+    def to_response_model(self, request: Request) -> ErrorResponse:
         return ErrorResponse(
             # type=f"https://api.example.com/errors/{self.code.value.lower()}", !# not needed for now
             code=self.code,
@@ -31,8 +33,8 @@ class AppBaseException(Exception):
             timestamp=datetime.datetime.now(
                 datetime.timezone.utc
             ),  # RFC 3339-compliant
-            path=path,
-            data=self.data,
+            path=request.url.path,
+            detail=self.detail,
         )
 
 
@@ -41,7 +43,7 @@ class DatabaseOperationException(AppBaseException):
         self,
         operation: str | None = None,
         message: str | None = None,
-        data: dict | None = None,
+        detail: dict | None = None,
     ):
         message = f"Failed to perform {operation} operation. {message} "
 
@@ -49,7 +51,7 @@ class DatabaseOperationException(AppBaseException):
             code=ErrorCodes.DATABASE_ERROR,
             message=message,
             status_code=500,
-            data=data,
+            detail=detail,
         )
 
 
@@ -61,7 +63,7 @@ class InvalidTokenException(AppBaseException):
             code=ErrorCodes.INVALID_TOKEN,
             message=message,
             status_code=401,
-            data={"token": token},
+            detail={"token": token},
         )
 
 
@@ -73,7 +75,7 @@ class InvalidPayloadException(AppBaseException):
             code=ErrorCodes.INVALID_PAYLOAD,
             message=message,
             status_code=401,
-            data={"payload": payload},
+            detail={"payload": payload},
         )
         if payload is None:
             payload = {1: "No payload provided"}
@@ -85,7 +87,7 @@ class DuplicateEntryException(AppBaseException):
             code=ErrorCodes.DUPLICATE_ENTRY,
             message=f"{field} '{value}' already exists in resource {resource}.",
             status_code=409,
-            data={field: value},
+            detail={field: value},
         )
 
 
@@ -93,7 +95,7 @@ class EntityNotFoundException(AppBaseException):
     def __init__(self, resource: str | None = None, resource_id: str | None = None):
         self.resource = resource
         self.resource_id = resource_id
-        data = {"identifier": resource_id}
+        detail = {"identifier": resource_id}
         message = (
             f"{resource} with id {resource_id} not found."
             if resource and resource_id
@@ -106,47 +108,47 @@ class EntityNotFoundException(AppBaseException):
             code=ErrorCodes.ENTITY_NOT_FOUND,
             message=message,
             status_code=404,
-            data=data,
+            detail=detail,
         )
 
 
 class InvalidCredentialsException(AppBaseException):
-    def __init__(self, data=None, message: str = "Authentication failed"):
-        if data is None:
-            data = {}
+    def __init__(self, detail=None, message: str = "Authentication failed"):
+        if detail is None:
+            detail = {}
         super().__init__(
             code=ErrorCodes.INVALID_CREDENTIALS,
             message=message,
             status_code=401,
-            data=data,
+            detail=detail,
         )
 
 
 class UnauthorizedException(AppBaseException):
-    def __init__(self, data=None, message: str = "Unauthorized"):
-        if data is None:
-            data = {}
+    def __init__(self, detail=None, message: str = "Unauthorized"):
+        if detail is None:
+            detail = {}
         super().__init__(
             code=ErrorCodes.UNAUTHORIZED,
             message=message,
             status_code=401,
-            data=data,
+            detail=detail,
         )
 
 
 class ForbiddenException(AppBaseException):
     def __init__(
         self,
-        data=None,
+        detail=None,
         message: str = "Forbidden. You do not have permission to access this resource.",
     ):
-        if data is None:
-            data = {}
+        if detail is None:
+            detail = {}
         super().__init__(
             code=ErrorCodes.FORBIDDEN,
             message=message,
             status_code=403,
-            data=data,
+            detail=detail,
         )
 
 
@@ -157,7 +159,7 @@ class InternalException(AppBaseException):
         code: ErrorCodes = ErrorCodes.INTERNAL_SERVER_ERROR,
         message: str = "An unexpected error occurred.",
         status_code: int = 500,
-        data: dict | None = None,
+        detail: dict | None = None,
         underlying_error: Exception | None = None,
     ):
         logger.debug(
@@ -165,4 +167,6 @@ class InternalException(AppBaseException):
             if isinstance(underlying_error, AppBaseException)
             else str(underlying_error),
         )
-        super().__init__(code=code, message=message, status_code=status_code, data=data)
+        super().__init__(
+            code=code, message=message, status_code=status_code, detail=detail
+        )
