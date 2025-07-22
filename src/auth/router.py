@@ -94,7 +94,7 @@ async def signin(
         data=result,
     )
 
-    return result.to_response_model(path=request.url.path)
+    return result.to_json_response(request)
 
 
 @router.get(
