@@ -1,3 +1,8 @@
+"""
+MinioService: Service for interacting with MinIO storage.
+Provides methods for bucket management, presigned URL generation, file deletion, notifications, and health checks.
+"""
+
 import logging
 import threading
 from datetime import datetime, timedelta, timezone
@@ -32,12 +37,11 @@ class MinioServiceError(Exception):
 class MinioService:
     """
     Service for interacting with MinIO storage.
-    - Creates a Singleton instance of Minio client.
-    - Ensures all required buckets exist at startup (no per-operation bucket existence checks).
+
+    - Singleton pattern for Minio client.
+    - Ensures all required buckets exist at startup.
     - Provides methods to create presigned URLs for file uploads and downloads.
-        with limited expiration times and limited file size. saves into specified bucket
-    - gets notified when file is uploaded directly into minio instance
-    - provides methods to delete files from MinIO storage.
+    - Provides notification and deletion utilities.
     """
 
     _instance = None
@@ -62,12 +66,13 @@ class MinioService:
         Initialize MinIO service.
 
         Args:
-            endpoint: MinIO server endpoint
-            access_key: Access key for MinIO
-            secret_key: Secret key for MinIO
-            secure: Use HTTPS if True, HTTP if False
-            region: Region name
-            bucket_names: List of bucket names to ensure exist
+            endpoint (str | None): MinIO server endpoint.
+            access_key (str | None): Access key for MinIO.
+            secret_key (str | None): Secret key for MinIO.
+            secure (bool | None): Use HTTPS if True, HTTP if False.
+
+        Raises:
+            MinioServiceError: If credentials are missing or connection fails.
         """
 
         print("MINIO SERVICE CREATION")
@@ -135,10 +140,10 @@ class MinioService:
         Ensure that all specified buckets exist, create them if they don't.
 
         Args:
-            bucket_names: List of bucket names to check/create
+            bucket_names (List[str]): List of bucket names to check/create.
 
         Returns:
-            Dict mapping bucket names to creation status (True if created, False if already existed)
+            Dict[str, bool]: Mapping bucket names to creation status (True if created, False if already existed).
         """
         results = {}
 
@@ -164,7 +169,15 @@ class MinioService:
         return results
 
     def _is_valid_bucket_name(self, bucket_name: str) -> bool:
-        """Validate bucket name according to S3 naming rules."""
+        """
+        Validate bucket name according to S3 naming rules.
+
+        Args:
+            bucket_name (str): The bucket name.
+
+        Returns:
+            bool: True if valid, False otherwise.
+        """
         if not bucket_name or len(bucket_name) < 3 or len(bucket_name) > 63:
             return False
         if bucket_name.startswith("-") or bucket_name.endswith("-"):
@@ -180,19 +193,22 @@ class MinioService:
         bucket_name: str,
         object_name: str,
         expires: timedelta = timedelta(hours=1),
-        max_file_size: int = 10 * 1024 * 1024,  # 10MB default
+        max_file_size: int = 10 * 1024 * 1024,
     ) -> Dict[str, Any]:
         """
         Create a presigned URL for file upload with size and type restrictions.
 
         Args:
-            bucket_name: Name of the bucket
-            object_name: Name of the object to upload
-            expires: URL expiration time
-            max_file_size: Maximum allowed file size in bytes
+            bucket_name (str): Name of the bucket.
+            object_name (str): Name of the object to upload.
+            expires (timedelta): URL expiration time.
+            max_file_size (int): Maximum allowed file size in bytes.
 
         Returns:
-            Dict containing presigned URL and upload conditions
+            Dict[str, Any]: Presigned URL and upload conditions.
+
+        Raises:
+            InternalException: If URL creation fails.
         """
         # Convert to datetime by adding to current time
         expiration_time = datetime.now(timezone.utc) + expires
@@ -234,12 +250,15 @@ class MinioService:
         Create a presigned URL for file download.
 
         Args:
-            bucket_name: Name of the bucket
-            object_name: Name of the object to download
-            expires: URL expiration time
+            bucket_name (str): Name of the bucket.
+            object_name (str): Name of the object to download.
+            expires (timedelta): URL expiration time.
 
         Returns:
-            Dict containing presigned URL and metadata
+            Dict[str, Any]: Presigned download URL and metadata.
+
+        Raises:
+            EntityNotFoundException: If the object does not exist.
         """
         # Bucket existence is ensured at startup; no per-operation check needed
 
@@ -276,11 +295,11 @@ class MinioService:
         Delete a file from MinIO storage.
 
         Args:
-            bucket_name: Name of the bucket
-            object_name: Name of the object to delete
+            bucket_name (str): Name of the bucket.
+            object_name (str): Name of the object to delete.
 
         Returns:
-            True if deletion was successful
+            bool: True if deletion was successful, False otherwise.
         """
         # Bucket existence is ensured at startup; no per-operation check needed
 
@@ -307,11 +326,11 @@ class MinioService:
         Delete multiple files from MinIO storage.
 
         Args:
-            bucket_name: Name of the bucket
-            object_names: List of object names to delete
+            bucket_name (str): Name of the bucket.
+            object_names (List[str]): List of object names to delete.
 
         Returns:
-            Dict mapping object names to deletion status
+            Dict[str, bool]: Mapping object names to deletion status.
         """
         # Bucket existence is ensured at startup; no per-operation check needed
 
@@ -354,14 +373,14 @@ class MinioService:
         Setup bucket notification for file upload events.
 
         Args:
-            bucket_name: Name of the bucket
-            queue_arn: ARN of the notification queue (e.g., SQS, SNS)
-            events: List of events to listen for
-            prefix: Object key prefix filter
-            suffix: Object key suffix filter
+            bucket_name (str): Name of the bucket.
+            queue_arn (str): ARN of the notification queue (e.g., SQS, SNS).
+            events (List[str] | None): List of events to listen for.
+            prefix (str): Object key prefix filter.
+            suffix (str): Object key suffix filter.
 
         Returns:
-            True if notification was set up successfully
+            bool: True if notification was set up successfully, False otherwise.
         """
         # Bucket existence is ensured at startup; no per-operation check needed
 
@@ -405,13 +424,16 @@ class MinioService:
         List objects in a bucket.
 
         Args:
-            bucket_name: Name of the bucket
-            prefix: Object key prefix filter
-            recursive: List objects recursively
-            max_objects: Maximum number of objects to return
+            bucket_name (str): Name of the bucket.
+            prefix (str): Object key prefix filter.
+            recursive (bool): List objects recursively.
+            max_objects (int): Maximum number of objects to return.
 
         Returns:
-            List of object information dictionaries
+            List[Dict[str, Any]]: List of object information dictionaries.
+
+        Raises:
+            InternalException: If listing fails.
         """
         # Bucket existence is ensured at startup; no per-operation check needed
 
@@ -452,11 +474,14 @@ class MinioService:
         Get detailed information about an object.
 
         Args:
-            bucket_name: Name of the bucket
-            object_name: Name of the object
+            bucket_name (str): Name of the bucket.
+            object_name (str): Name of the object.
 
         Returns:
-            Dictionary containing object metadata
+            Dict[str, Any]: Object metadata.
+
+        Raises:
+            EntityNotFoundException: If the object does not exist.
         """
         # Bucket existence is ensured at startup; no per-operation check needed
 
@@ -490,7 +515,7 @@ class MinioService:
         Perform a health check on the MinIO service.
 
         Returns:
-            Dictionary containing health status information
+            Dict[str, Any]: Health status information.
         """
         try:
             # Test connection by listing buckets
@@ -524,8 +549,19 @@ class MinioService:
     ) -> dict:
         """
         Create a presigned PUT URL for file upload.
-        NOTE: Content-type and file size restrictions are NOT enforced by MinIO/S3 for PUT URLs.
-        You must validate these after upload.
+
+        Args:
+            bucket_name (str): Name of the bucket.
+            object_name (str): Name of the object to upload.
+            expires (timedelta): URL expiration time.
+            allowed_content_types (list[str] | None): Allowed content types (not enforced).
+            max_file_size (int | None): Maximum file size (not enforced).
+
+        Returns:
+            dict: Presigned PUT URL and metadata.
+
+        Raises:
+            InternalException: If URL creation fails.
         """
         # Bucket existence is ensured at startup; no per-operation check needed
 
@@ -562,6 +598,15 @@ def get_MinioService(
     """
     Factory function to get MinioService instance.
     Can be used as a FastAPI dependency.
+
+    Args:
+        endpoint (str | None): MinIO server endpoint.
+        access_key (str | None): Access key for MinIO.
+        secret_key (str | None): Secret key for MinIO.
+        secure (bool | None): Use HTTPS if True, HTTP if False.
+
+    Returns:
+        MinioService: The MinioService singleton instance.
     """
     return MinioService(
         endpoint=endpoint, access_key=access_key, secret_key=secret_key, secure=secure

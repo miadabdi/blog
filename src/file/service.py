@@ -1,3 +1,8 @@
+"""
+Service layer for file operations using MinIO.
+Handles business logic for generating presigned URLs for uploads and downloads.
+"""
+
 import uuid
 from datetime import datetime, timedelta, timezone
 from functools import lru_cache
@@ -9,12 +14,28 @@ from .minio import MinioService, get_MinioService
 
 
 class FileService:
+    """
+    Service class for managing file operations via MinIO.
+    """
+
     def __init__(self, minio: MinioService):
+        """
+        Initialize FileService with a MinioService instance.
+
+        Args:
+            minio (MinioService): The MinioService instance.
+        """
         self.minio = minio
 
     def _generate_unique_object_name(self, uploadname: str) -> str:
         """
         Generate a unique object name using the uploadname, current timestamp, and a random UUID.
+
+        Args:
+            uploadname (str): The original filename.
+
+        Returns:
+            str: A unique object name for storage.
         """
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
         unique_suffix = uuid.uuid4().hex[:8]
@@ -25,6 +46,13 @@ class FileService:
     ) -> dict:
         """
         Create a presigned URL for uploading an image to the 'images' bucket (max 10MB).
+
+        Args:
+            uploadname (str): The original filename.
+            expires_seconds (int): Expiry time for the URL in seconds.
+
+        Returns:
+            dict: Presigned URL and form data for upload.
         """
         object_name = self._generate_unique_object_name(uploadname)
         return await self.minio.create_presigned_upload_url(
@@ -40,6 +68,13 @@ class FileService:
     ) -> dict:
         """
         Create a presigned URL for uploading a general file to the 'files' bucket (max 100MB, disallow images).
+
+        Args:
+            uploadname (str): The original filename.
+            expires_seconds (int): Expiry time for the URL in seconds.
+
+        Returns:
+            dict: Presigned URL and form data for upload.
         """
         object_name = self._generate_unique_object_name(uploadname)
         return await self.minio.create_presigned_upload_url(
@@ -55,6 +90,14 @@ class FileService:
     ) -> dict:
         """
         Create a presigned URL for downloading a file from the specified bucket.
+
+        Args:
+            bucket_name (str): The bucket name.
+            object_name (str): The object name.
+            expires_seconds (int): Expiry time for the URL in seconds.
+
+        Returns:
+            dict: Presigned download URL and metadata.
         """
         return await self.minio.create_presigned_download_url(
             bucket_name=bucket_name,
@@ -67,4 +110,13 @@ class FileService:
 def get_FileService(
     categoryRepository: Annotated[MinioService, Depends(get_MinioService)],
 ) -> FileService:
+    """
+    Dependency injector for FileService.
+
+    Args:
+        categoryRepository (MinioService): The MinioService instance.
+
+    Returns:
+        FileService: The FileService instance.
+    """
     return FileService(categoryRepository)
