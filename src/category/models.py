@@ -1,3 +1,8 @@
+"""
+SQLModel definition for Category.
+Includes slug generation event listeners.
+"""
+
 from typing import TYPE_CHECKING
 
 from slugify import slugify
@@ -12,12 +17,17 @@ if TYPE_CHECKING:
 
 
 class Category(GenericModel, table=True):
+    """
+    SQLModel for the Category entity.
+    """
+
     __tablename__: str = "categories"  # type: ignore
 
     name: str = Field(unique=True, nullable=False)
     slug: str = Field(unique=True, nullable=False)
     description: str | None = Field(default=None)
 
+    # Relationship to posts via link table
     posts: list["Post"] = Relationship(
         back_populates="categories", link_model=PostCategoryLink
     )
@@ -26,6 +36,14 @@ class Category(GenericModel, table=True):
 @event.listens_for(Category, "before_insert")
 @event.listens_for(Category, "before_update")
 def generate_slug(mapper, connection, target: Category):
+    """
+    SQLAlchemy event listener to generate slug from name before insert/update.
+
+    Args:
+        mapper: SQLAlchemy mapper.
+        connection: Database connection.
+        target (Category): The Category instance being persisted.
+    """
     # Only regenerate slug if name exists and (slug is empty or name changed)
     if target.name:
         new_slug = slugify(target.name)
