@@ -1,3 +1,7 @@
+"""
+BaseResponse for API responses.
+"""
+
 from datetime import datetime
 
 from pydantic import BaseModel

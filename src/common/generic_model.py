@@ -1,9 +1,22 @@
+"""
+Base SQLModel for all models with id, created_at, and updated_at fields.
+"""
+
 from datetime import datetime
 
 from sqlmodel import Field, SQLModel, func
 
 
 class GenericModel(SQLModel):
+    """
+    Base model for all database tables.
+
+    Attributes:
+        id (int | None): Primary key.
+        created_at (datetime): Creation timestamp.
+        updated_at (datetime): Last update timestamp.
+    """
+
     id: int | None = Field(default=None, primary_key=True)
     created_at: datetime = Field(sa_column_kwargs={"server_default": func.now()})
     updated_at: datetime = Field(

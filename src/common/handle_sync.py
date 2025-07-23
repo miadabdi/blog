@@ -1,3 +1,7 @@
+"""
+Decorator to run synchronous functions in a threadpool as async.
+"""
+
 from functools import wraps
 from typing import Awaitable, Callable, ParamSpec, TypeVar
 
@@ -8,7 +12,15 @@ T = TypeVar("T")
 
 
 def _handle_sync(func: Callable[P, T]) -> Callable[P, Awaitable[T]]:
-    """Decorator to make underlying func async."""
+    """
+    Decorator to make a synchronous function run asynchronously in a threadpool.
+
+    Args:
+        func (Callable[P, T]): The synchronous function.
+
+    Returns:
+        Callable[P, Awaitable[T]]: An async wrapper for the function.
+    """
 
     @wraps(func)
     async def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:

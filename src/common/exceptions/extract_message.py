@@ -1,3 +1,8 @@
+"""
+Helper to extract a message from an exception.
+"""
+
+
 def extract_message(exc: Exception) -> str:
     """
     Extracts the message from an exception, handling different types of exceptions.

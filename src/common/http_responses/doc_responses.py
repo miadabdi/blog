@@ -1,3 +1,7 @@
+"""
+Helpers for OpenAPI documentation of success and error responses.
+"""
+
 from typing import Any
 
 from pydantic import BaseModel
@@ -7,6 +11,10 @@ from .success_response import SuccessResponse
 
 
 class ResponseSuccessDoc:
+    """
+    Helper class for generating OpenAPI documentation for successful responses.
+    """
+
     @staticmethod
     def HTTP_200_OK(description: str, response_type: type[BaseModel]) -> dict:
         return {
@@ -33,6 +41,10 @@ class ResponseSuccessDoc:
 
 
 class ResponseErrorDoc:
+    """
+    Helper class for generating OpenAPI documentation for error responses.
+    """
+
     @staticmethod
     def HTTP_400_BAD_REQUEST(description: str) -> dict:
         return {400: {"model": ErrorResponseWrapper, "description": description}}

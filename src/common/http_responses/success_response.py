@@ -1,3 +1,7 @@
+"""
+SuccessResponse and SuccessCodes for standardized API success responses.
+"""
+
 from enum import StrEnum
 from typing import Generic, TypeVar
 

@@ -1,3 +1,7 @@
+"""
+Database engine and session management for SQLModel and SQLAlchemy.
+"""
+
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlmodel import SQLModel
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -27,11 +31,20 @@ SessionLocal = async_sessionmaker(
 
 
 async def create_db_and_tables():
+    """
+    Create all tables in the database.
+    """
     async with async_engine.begin() as conn:
         # For SQLModel, this will create the tables (but won't drop existing ones)
         await conn.run_sync(SQLModel.metadata.create_all)
 
 
 async def get_session():
+    """
+    Dependency for getting an async database session.
+
+    Yields:
+        AsyncSession: The database session.
+    """
     async with SessionLocal.begin() as session:
         yield session

@@ -1,3 +1,7 @@
+"""
+ErrorResponse and ErrorCodes for standardized API error responses.
+"""
+
 from enum import StrEnum
 from typing import Any
 
@@ -5,6 +9,10 @@ from .base import BaseResponse
 
 
 class ErrorCodes(StrEnum):
+    """
+    Enum for error codes used in API error responses.
+    """
+
     DUPLICATE_ENTRY = "DUPLICATE_ENTRY"
     ENTITY_NOT_FOUND = "ENTITY_NOT_FOUND"
     NO_CONTENT = "NO_CONTENT"
@@ -43,4 +51,8 @@ class ErrorResponse(BaseResponse):
 
 
 class ErrorResponseWrapper(ErrorResponse):
+    """
+    Wrapper for ErrorResponse, for OpenAPI documentation and error handling.
+    """
+
     pass

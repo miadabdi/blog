@@ -1,3 +1,7 @@
+"""
+Custom exception classes for application errors.
+"""
+
 import datetime
 
 from fastapi import Request
@@ -11,6 +15,16 @@ logger = logging.getLogger(__name__)
 
 
 class AppBaseException(Exception):
+    """
+    Base exception for application errors.
+
+    Args:
+        code (ErrorCodes): Error code.
+        message (str): Error message.
+        status_code (int): HTTP status code.
+        detail (dict | None): Additional error details.
+    """
+
     def __init__(
         self,
         *,
@@ -25,6 +39,15 @@ class AppBaseException(Exception):
         self.detail = detail or {}
 
     def to_response_model(self, request: Request) -> ErrorResponse:
+        """
+        Convert to an ErrorResponse model.
+
+        Args:
+            request (Request): The FastAPI request.
+
+        Returns:
+            ErrorResponse: The error response model.
+        """
         return ErrorResponse(
             # type=f"https://api.example.com/errors/{self.code.value.lower()}", !# not needed for now
             code=self.code,
@@ -39,6 +62,10 @@ class AppBaseException(Exception):
 
 
 class DatabaseOperationException(AppBaseException):
+    """
+    Exception for database operation errors.
+    """
+
     def __init__(
         self,
         operation: str | None = None,
@@ -56,7 +83,9 @@ class DatabaseOperationException(AppBaseException):
 
 
 class InvalidTokenException(AppBaseException):
-    """Raised when ."""
+    """
+    Exception for invalid token errors.
+    """
 
     def __init__(self, message="Invalid token", token: str = "No token provided"):
         super().__init__(
@@ -68,7 +97,9 @@ class InvalidTokenException(AppBaseException):
 
 
 class InvalidPayloadException(AppBaseException):
-    """Raised when ."""
+    """
+    Exception for invalid payload errors.
+    """
 
     def __init__(self, message="Invalid payload", payload=None):
         super().__init__(
@@ -82,6 +113,10 @@ class InvalidPayloadException(AppBaseException):
 
 
 class DuplicateEntryException(AppBaseException):
+    """
+    Exception for duplicate entry errors.
+    """
+
     def __init__(self, field: str, resource: str, value: str | None = None):
         super().__init__(
             code=ErrorCodes.DUPLICATE_ENTRY,
@@ -92,6 +127,10 @@ class DuplicateEntryException(AppBaseException):
 
 
 class EntityNotFoundException(AppBaseException):
+    """
+    Exception for entity not found errors.
+    """
+
     def __init__(self, resource: str | None = None, resource_id: str | None = None):
         self.resource = resource
         self.resource_id = resource_id
@@ -113,6 +152,10 @@ class EntityNotFoundException(AppBaseException):
 
 
 class InvalidCredentialsException(AppBaseException):
+    """
+    Exception for invalid credentials errors.
+    """
+
     def __init__(self, detail=None, message: str = "Authentication failed"):
         if detail is None:
             detail = {}
@@ -125,6 +168,10 @@ class InvalidCredentialsException(AppBaseException):
 
 
 class UnauthorizedException(AppBaseException):
+    """
+    Exception for unauthorized access errors.
+    """
+
     def __init__(self, detail=None, message: str = "Unauthorized"):
         if detail is None:
             detail = {}
@@ -137,6 +184,10 @@ class UnauthorizedException(AppBaseException):
 
 
 class ForbiddenException(AppBaseException):
+    """
+    Exception for forbidden access errors.
+    """
+
     def __init__(
         self,
         detail=None,
@@ -153,6 +204,17 @@ class ForbiddenException(AppBaseException):
 
 
 class InternalException(AppBaseException):
+    """
+    Exception for unexpected internal errors.
+
+    Args:
+        code (ErrorCodes): Error code.
+        message (str): Error message.
+        status_code (int): HTTP status code.
+        detail (dict | None): Additional error details.
+        underlying_error (Exception | None): The underlying exception.
+    """
+
     def __init__(
         self,
         *,
