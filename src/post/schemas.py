@@ -1,3 +1,8 @@
+"""
+Pydantic schemas for Post API.
+Defines request and response models for post endpoints.
+"""
+
 from datetime import datetime
 
 from pydantic import BaseModel, Field
@@ -8,6 +13,10 @@ from ..tag.schemas import TagPublic
 
 
 class CreatePost(BaseModel):
+    """
+    Schema for creating a new post.
+    """
+
     title: str = Field(min_length=1)
     summary: str = Field(min_length=1)
     body: str = Field(min_length=1)
@@ -17,6 +26,10 @@ class CreatePost(BaseModel):
 
 
 class UpdatePost(BaseModel):
+    """
+    Schema for updating an existing post.
+    """
+
     title: str | None = Field(default=None)
     summary: str | None = Field(default=None)
     body: str | None = Field(default=None)
@@ -26,6 +39,10 @@ class UpdatePost(BaseModel):
 
 
 class PostPublic(BaseModel):
+    """
+    Public schema for exposing post data.
+    """
+
     id: int
     title: str
     summary: str

@@ -1,3 +1,8 @@
+"""
+Service layer for Post operations.
+Handles business logic and error handling for post CRUD operations.
+"""
+
 from functools import lru_cache
 from typing import Annotated
 
@@ -19,12 +24,24 @@ from .schemas import CreatePost, UpdatePost
 
 
 class PostService:
+    """
+    Service class for managing Post entities.
+    """
+
     def __init__(
         self,
         repo: PostRepository,
         category_service: CategoryService,
         tag_service: TagService,
     ):
+        """
+        Initialize PostService with repository and related services.
+
+        Args:
+            repo (PostRepository): The repository instance for Post.
+            category_service (CategoryService): Service for category operations.
+            tag_service (TagService): Service for tag operations.
+        """
         self.repository = repo
         self.category_service = category_service
         self.tag_service = tag_service
@@ -32,6 +49,21 @@ class PostService:
     async def create_post(
         self, data: CreatePost, current_user: User, session: AsyncSession
     ) -> Post:
+        """
+        Create a new post.
+
+        Args:
+            data (CreatePost): Data for the new post.
+            current_user (User): The current authenticated user.
+            session (AsyncSession): Database session.
+
+        Returns:
+            Post: The created post instance.
+
+        Raises:
+            DuplicateEntryException: If a post with the same title exists.
+            InternalException: For unexpected errors.
+        """
         categories = []
         for category_id in data.category_ids or []:
             category = await self.category_service.get_category_by_id(
@@ -70,6 +102,22 @@ class PostService:
     async def update_post(
         self, id: int, update_data: UpdatePost, session: AsyncSession
     ) -> Post:
+        """
+        Update an existing post.
+
+        Args:
+            id (int): ID of the post to update.
+            update_data (UpdatePost): Data to update.
+            session (AsyncSession): Database session.
+
+        Returns:
+            Post: The updated post instance.
+
+        Raises:
+            DuplicateEntryException: If a post with the same title exists.
+            EntityNotFoundException: If the post does not exist.
+            InternalException: For unexpected errors.
+        """
         post_data = update_data.model_dump(exclude_unset=True)
         try:
             updated_post = await self.repository.get_by_id(id, session)
@@ -116,10 +164,33 @@ class PostService:
         return result
 
     async def delete_post(self, id: int, session: AsyncSession) -> Post:
+        """
+        Delete a post by ID.
+
+        Args:
+            id (int): ID of the post to delete.
+            session (AsyncSession): Database session.
+
+        Returns:
+            Post: The deleted post instance.
+        """
         result = await self.repository.delete(id, session)
         return result
 
     async def get_post_by_id(self, id: int, session: AsyncSession) -> Post:
+        """
+        Retrieve a post by its ID.
+
+        Args:
+            id (int): ID of the post.
+            session (AsyncSession): Database session.
+
+        Returns:
+            Post: The found post instance.
+
+        Raises:
+            EntityNotFoundException: If the post does not exist.
+        """
         result = await self.repository.get_by_id(id, session)
 
         if result is None:
@@ -134,4 +205,15 @@ def get_PostService(
     category_service: Annotated[CategoryService, Depends(get_CategoryService)],
     tag_service: Annotated[TagService, Depends(get_TagService)],
 ) -> PostService:
+    """
+    Dependency injector for PostService.
+
+    Args:
+        postRepository (PostRepository): The PostRepository instance.
+        category_service (CategoryService): The CategoryService instance.
+        tag_service (TagService): The TagService instance.
+
+    Returns:
+        PostService: The PostService instance.
+    """
     return PostService(postRepository, category_service, tag_service)

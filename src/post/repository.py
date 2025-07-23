@@ -1,3 +1,8 @@
+"""
+Repository layer for Post.
+Handles direct database operations for Post entities.
+"""
+
 from functools import lru_cache
 
 from ..common.generic_repository import GenericRepository
@@ -5,6 +10,10 @@ from .models import Post
 
 
 class PostRepository(GenericRepository[Post]):
+    """
+    Repository for Post model, inherits generic CRUD operations.
+    """
+
     def __init__(self):
         super().__init__(Post)
 
@@ -16,6 +25,19 @@ class PostRepository(GenericRepository[Post]):
         categories=None,
         tags=None,
     ):
+        """
+        Update a post with many-to-many relationships.
+
+        Args:
+            post: The post instance to update.
+            post_data: Dictionary of fields to update.
+            session: Database session.
+            categories: List of category instances or None.
+            tags: List of tag instances or None.
+
+        Returns:
+            Post: The updated post instance.
+        """
         # Update scalar fields
         for key, value in post_data.items():
             if key not in ("category_ids", "tag_ids"):
@@ -35,4 +57,7 @@ class PostRepository(GenericRepository[Post]):
 
 @lru_cache
 def get_PostRepository():
+    """
+    Dependency injector for PostRepository.
+    """
     return PostRepository()

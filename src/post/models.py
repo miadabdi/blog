@@ -1,3 +1,8 @@
+"""
+SQLModel definition for Post.
+Includes slug generation event listeners and relationships.
+"""
+
 from datetime import datetime
 
 from slugify import slugify
@@ -16,6 +21,10 @@ from .link_models import (
 
 
 class Post(GenericModel, table=True):
+    """
+    SQLModel for the Post entity.
+    """
+
     __tablename__: str = "posts"  #  type: ignore
 
     published_at: datetime | None = Field(default=None)
@@ -51,6 +60,14 @@ class Post(GenericModel, table=True):
 @event.listens_for(Post, "before_insert")
 @event.listens_for(Post, "before_update")
 def generate_slug(mapper, connection, target: Post):
+    """
+    SQLAlchemy event listener to generate slug from title before insert/update.
+
+    Args:
+        mapper: SQLAlchemy mapper.
+        connection: Database connection.
+        target (Post): The Post instance being persisted.
+    """
     # Only regenerate slug if title exists and (slug is empty or title changed)
     if target.title:
         new_slug = slugify(target.title)
