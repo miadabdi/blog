@@ -1,9 +1,18 @@
+"""
+SQLModel definition for Comment.
+Represents the comment entity in the database.
+"""
+
 from sqlmodel import Field
 
 from ..common.generic_model import GenericModel
 
 
 class Comment(GenericModel, table=True):
+    """
+    SQLModel for the Comment entity.
+    """
+
     __tablename__: str = "comments"  # type: ignore
 
     post_id: int = Field(foreign_key="posts.id", nullable=False)
