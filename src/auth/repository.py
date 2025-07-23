@@ -9,11 +9,17 @@ from .models import User
 
 
 class UserRepository(GenericRepository[User]):
+    """
+    Repository for user-specific database operations.
+    """
+
     def __init__(self):
         super().__init__(User)
 
     async def get_by_email(self, email: str, session: AsyncSession) -> Optional[User]:
-        """Get a record by Email"""
+        """
+        Get a user record by email address.
+        """
         return (
             await session.exec(select(self.model).where(self.model.email == email))
         ).first()

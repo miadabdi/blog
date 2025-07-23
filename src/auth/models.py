@@ -12,6 +12,10 @@ if TYPE_CHECKING:
 
 
 class User(GenericModel, table=True):
+    """
+    User database model.
+    """
+
     __tablename__: str = "users"  #  type: ignore
 
     email: EmailStr = Field(index=True, unique=True)
@@ -31,4 +35,4 @@ class User(GenericModel, table=True):
         sa_relationship_kwargs={
             "lazy": "noload",
         },
-    )
+    )  # posts: List of posts authored by the user.

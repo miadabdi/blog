@@ -34,6 +34,9 @@ async def signup(
     session: AsyncSessionDep,
     request: Request,
 ):
+    """
+    Register a new user.
+    """
     user = await user_service.sign_up(form_data, session)
 
     # Convert User to UserPublic, removes sensitive fields
@@ -64,6 +67,9 @@ async def token(
     session: AsyncSessionDep,
     user_service: Annotated[UserService, Depends(get_UserService)],
 ):
+    """
+    Obtain an access token for authentication.
+    """
     result = await user_service.sign_in(form_data, session)
     return result
 
@@ -85,6 +91,9 @@ async def signin(
     user_service: Annotated[UserService, Depends(get_UserService)],
     request: Request,
 ):
+    """
+    Sign in and return a success response with token.
+    """
     result = await token(form_data, session, user_service)
 
     result = SuccessResult[Token](
@@ -111,6 +120,9 @@ async def getMe(
     current_user: Annotated[User, Depends(get_current_active_user)],
     request: Request,
 ):
+    """
+    Get the currently authenticated user's public information.
+    """
     # Convert User to UserPublic, removes sensitive fields
     user_public = UserPublic.model_validate(current_user)
     result = SuccessResult[UserPublic](

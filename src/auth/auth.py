@@ -31,6 +31,10 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
 
 
 class AuthService:
+    """
+    Service for authentication and authorization logic.
+    """
+
     def __init__(self, user_repository: UserRepository):
         self.user_repository = user_repository
 
@@ -65,13 +69,16 @@ class AuthService:
     @_handle_sync
     def decode_jwt(self, token: str) -> dict:
         """
-        Encode data into a JWT token.
+        Decode a JWT token.
         """
         return jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
 
     async def create_access_token(
         self, data: dict, expires_delta: timedelta | None = None
     ):
+        """
+        Create a JWT access token with expiration.
+        """
         to_encode = data.copy()
         if expires_delta:
             expire = datetime.now(timezone.utc) + expires_delta
@@ -82,6 +89,9 @@ class AuthService:
         return encoded_jwt
 
     async def verify_user(self, token: str, session: AsyncSession):
+        """
+        Verify a user from a JWT token.
+        """
         try:
             payload = await self.decode_jwt(token)
             username = payload.get("sub")
@@ -99,6 +109,9 @@ class AuthService:
         return user
 
     async def authenticate_user(self, email: str, password: str, session: AsyncSession):
+        """
+        Authenticate a user by email and password.
+        """
         user = await self.user_repository.get_by_email(email, session)
 
         if not user:
@@ -123,6 +136,9 @@ async def get_current_user(
     session: AsyncSessionDep,
     auth_service: Annotated[AuthService, Depends(get_AuthService)],
 ) -> User:
+    """
+    Dependency to get the current user from the JWT token.
+    """
     result = await auth_service.verify_user(token, session)
     return result
 
@@ -130,12 +146,19 @@ async def get_current_user(
 async def get_current_active_user(
     current_user: Annotated[User, Depends(get_current_user)],
 ):
+    """
+    Dependency to ensure the current user is active.
+    """
     if not current_user.is_active:
         raise UnauthorizedException()
     return current_user
 
 
 def authorize(role: list):
+    """
+    Decorator to enforce role-based access control.
+    """
+
     def decorator(func):
         @wraps(func)
         async def wrapper(*args, **kwargs):
