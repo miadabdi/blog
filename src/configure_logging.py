@@ -1,3 +1,9 @@
+"""
+Logging configuration for the FastAPI application.
+
+Provides JSON and colored log formatters, and a function to configure logging.
+"""
+
 import json
 import logging
 from datetime import datetime
@@ -5,7 +11,20 @@ from logging.config import dictConfig
 
 
 class JsonFormatter(logging.Formatter):
+    """
+    Formatter for logging in JSON format.
+    """
+
     def format(self, record):
+        """
+        Format a log record as JSON.
+
+        Args:
+            record (logging.LogRecord): The log record.
+
+        Returns:
+            str: The formatted JSON log string.
+        """
         log_record = {
             "timestamp": datetime.now().isoformat(),
             "level": record.levelname,
@@ -16,7 +35,6 @@ class JsonFormatter(logging.Formatter):
         }
 
         # Add exception info if available
-
         if record.exc_info:
             log_record["exception"] = self.formatException(record.exc_info)
 
@@ -24,7 +42,9 @@ class JsonFormatter(logging.Formatter):
 
 
 class ColoredFormatter(logging.Formatter):
-    """Colored log formatter using ANSI escape codes."""
+    """
+    Colored log formatter using ANSI escape codes.
+    """
 
     # ANSI color codes
     COLORS = {
@@ -39,6 +59,15 @@ class ColoredFormatter(logging.Formatter):
     BOLD = "\033[1m"  # Bold text
 
     def format(self, record):
+        """
+        Format a log record with color for the log level.
+
+        Args:
+            record (logging.LogRecord): The log record.
+
+        Returns:
+            str: The formatted colored log string.
+        """
         # Get the original formatted message
         log_message = super().format(record)
 
@@ -95,5 +124,10 @@ log_config = {
 
 
 def configure_logging():
-    # Configure logging
+    """
+    Configure logging for the application using the defined log_config.
+
+    Returns:
+        None
+    """
     dictConfig(log_config)

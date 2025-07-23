@@ -1,3 +1,11 @@
+"""
+Main FastAPI application entry point.
+
+- Configures logging and exception handlers.
+- Sets up application routers and health checks.
+- Manages application lifespan and database cleanup.
+"""
+
 import logging
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
@@ -36,6 +44,17 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan_with_db_cleanup(app: FastAPI):
+    """
+    Context manager for FastAPI lifespan events.
+
+    Handles startup and shutdown logic, including database cleanup.
+
+    Args:
+        app (FastAPI): The FastAPI application.
+
+    Yields:
+        None
+    """
     # Startup
     logger.info("Starting up...")
 
@@ -67,6 +86,9 @@ register_exception_handlers(app)
 async def health_check():
     """
     Health check endpoint to verify if the service is running.
+
+    Returns:
+        dict: Status, message, and current UTC date.
     """
     return {
         "status": "ok",
@@ -84,6 +106,12 @@ app.include_router(comment_router)
 
 
 async def get_thread_limiter():
+    """
+    Dependency to get the current thread limiter for AnyIO.
+
+    Returns:
+        anyio.to_thread.ThreadLimiter: The thread limiter.
+    """
     return current_default_thread_limiter()
 
 
@@ -93,6 +121,16 @@ async def get_active_threads(
     current_user: Annotated[User, Depends(get_current_active_user)],
     limiter=Depends(get_thread_limiter),
 ):
+    """
+    Get the number of active threads and total tokens for the thread limiter.
+
+    Args:
+        current_user (User): The current authenticated user.
+        limiter: The thread limiter dependency.
+
+    Returns:
+        dict: Active threads and total tokens.
+    """
     threads_in_use = limiter.borrowed_tokens
 
     return {"active_threads": threads_in_use, "total_tokens": limiter.total_tokens}
