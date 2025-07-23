@@ -1,3 +1,8 @@
+"""
+API router for Tag endpoints.
+Handles HTTP requests for tag CRUD operations.
+"""
+
 from typing import Annotated
 
 from fastapi import APIRouter, Body, Depends, Request, status
@@ -37,6 +42,19 @@ async def create_tag(
     current_user: Annotated[User, Depends(get_current_active_user)],
     request: Request,
 ):
+    """
+    Create a new tag.
+
+    Args:
+        tag (CreateTag): The tag data to create.
+        session (AsyncSessionDep): The database session.
+        service (TagServiceDep): The tag service dependency.
+        current_user (User): The current authenticated user.
+        request (Request): The HTTP request object.
+
+    Returns:
+        JSONResponse: The created tag wrapped in a SuccessResult.
+    """
     created_tag = await service.create_tag(tag, session)
     public_tag = TagPublic.model_validate(created_tag)
     result = SuccessResult[TagPublic](
@@ -68,6 +86,20 @@ async def update_tag(
     current_user: Annotated[User, Depends(get_current_active_user)],
     request: Request,
 ):
+    """
+    Update an existing tag.
+
+    Args:
+        tag_id (int): The ID of the tag to update.
+        tag (UpdateTag): The updated tag data.
+        session (AsyncSessionDep): The database session.
+        service (TagServiceDep): The tag service dependency.
+        current_user (User): The current authenticated user.
+        request (Request): The HTTP request object.
+
+    Returns:
+        JSONResponse: The updated tag wrapped in a SuccessResult.
+    """
     updated_tag = await service.update_tag(tag_id, tag, session)
     public_tag = TagPublic.model_validate(updated_tag)
     result = SuccessResult[TagPublic](
@@ -97,6 +129,19 @@ async def delete_tag(
     current_user: Annotated[User, Depends(get_current_active_user)],
     request: Request,
 ):
+    """
+    Delete a tag by its ID.
+
+    Args:
+        tag_id (int): The ID of the tag to delete.
+        session (AsyncSessionDep): The database session.
+        service (TagServiceDep): The tag service dependency.
+        current_user (User): The current authenticated user.
+        request (Request): The HTTP request object.
+
+    Returns:
+        JSONResponse: The deleted tag wrapped in a SuccessResult.
+    """
     deleted_tag = await service.delete_tag(tag_id, session)
     public_tag = TagPublic.model_validate(deleted_tag)
     result = SuccessResult[TagPublic](
@@ -120,6 +165,18 @@ async def delete_tag(
 async def get_tag_by_id(
     tag_id: int, session: AsyncSessionDep, service: TagServiceDep, request: Request
 ):
+    """
+    Retrieve a tag by its ID.
+
+    Args:
+        tag_id (int): The ID of the tag to retrieve.
+        session (AsyncSessionDep): The database session.
+        service (TagServiceDep): The tag service dependency.
+        request (Request): The HTTP request object.
+
+    Returns:
+        JSONResponse: The requested tag wrapped in a SuccessResult.
+    """
     tag = await service.get_tag_by_id(tag_id, session)
     public_tag = TagPublic.model_validate(tag)
     result = SuccessResult[TagPublic](
@@ -140,6 +197,17 @@ async def get_tag_by_id(
     },
 )
 async def list_tags(session: AsyncSessionDep, service: TagServiceDep, request: Request):
+    """
+    Retrieve all tags.
+
+    Args:
+        session (AsyncSessionDep): The database session.
+        service (TagServiceDep): The tag service dependency.
+        request (Request): The HTTP request object.
+
+    Returns:
+        JSONResponse: A list of tags wrapped in a SuccessResult.
+    """
     tags = await service.get_all_tags(session)
     public_tags = [TagPublic.model_validate(tag) for tag in tags]
     result = SuccessResult[list[TagPublic]](
