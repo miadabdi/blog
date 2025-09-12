@@ -43,3 +43,4 @@ uvloop==0.21.0
 watchfiles==1.0.5
 websockets==15.0.1
 minio==7.2.15
+redis==5.2.1

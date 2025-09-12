@@ -1,34 +1,28 @@
 import json
 from typing import Any, Optional
 
-from ..exceptions.exceptions import InternalException
+import redis.asyncio as redis
 
+from ..exceptions.exceptions import InternalException
 from .base import CacheInterface
 
 
 class RedisCache(CacheInterface):
-    """Asynchronous Redis cache wrapper with lazy import.
+    """Asynchronous Redis cache wrapper with eager import.
 
-    The redis.asyncio module is imported lazily inside connect() so that
-    importing this module does not fail in environments where the redis
-    package is not installed (e.g., during some unit tests).
+    The redis.asyncio module is imported at module import time, so ensure the
+    'redis' package is installed in your environment.
     """
 
     def __init__(self, redis_url: str):
         self.redis_url = redis_url
-        self.client: Optional[Any] = None
-        self._redis_module: Optional[Any] = None
+        self.client: Optional[redis.Redis] = None
 
     async def connect(self):
         if not self.client:
             try:
-                # Import redis.asyncio lazily to avoid import-time failures
-                if self._redis_module is None:
-                    import importlib
-
-                    self._redis_module = importlib.import_module("redis.asyncio")
-
-                self.client = self._redis_module.from_url(self.redis_url)
+                # Create an async Redis client using the eagerly imported module
+                self.client = redis.from_url(self.redis_url)
             except Exception as e:
                 raise InternalException(
                     message="Failed to connect to Redis cache", underlying_error=e
@@ -36,8 +30,11 @@ class RedisCache(CacheInterface):
 
     async def get(self, key: str) -> Optional[Any]:
         await self.connect()
+        client = self.client
+        if client is None:
+            raise InternalException(message="Redis client not initialized")
         try:
-            value = await self.client.get(key)
+            value = await client.get(key)
             if value:
                 return json.loads(value)
             return None
@@ -48,8 +45,11 @@ class RedisCache(CacheInterface):
 
     async def set(self, key: str, value: Any, expire: int = 3600) -> None:
         await self.connect()
+        client = self.client
+        if client is None:
+            raise InternalException(message="Redis client not initialized")
         try:
-            await self.client.set(key, json.dumps(value, default=str), ex=expire)
+            await client.set(key, json.dumps(value, default=str), ex=expire)
         except Exception as e:
             raise InternalException(
                 message=f"Failed to set cache key: {key}", underlying_error=e
@@ -57,8 +57,11 @@ class RedisCache(CacheInterface):
 
     async def delete(self, key: str) -> None:
         await self.connect()
+        client = self.client
+        if client is None:
+            raise InternalException(message="Redis client not initialized")
         try:
-            await self.client.delete(key)
+            await client.delete(key)
         except Exception as e:
             raise InternalException(
                 message=f"Failed to delete cache key: {key}", underlying_error=e
@@ -66,8 +69,11 @@ class RedisCache(CacheInterface):
 
     async def exists(self, key: str) -> bool:
         await self.connect()
+        client = self.client
+        if client is None:
+            raise InternalException(message="Redis client not initialized")
         try:
-            return bool(await self.client.exists(key))
+            return bool(await client.exists(key))
         except Exception as e:
             raise InternalException(
                 message=f"Failed to check cache key existence: {key}",
