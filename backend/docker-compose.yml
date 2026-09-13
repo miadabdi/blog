@@ -1,24 +1,22 @@
 services:
   app:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./Dockerfile
+    command: python -m uvicorn src.main:app --reload --host "0.0.0.0" --port 80
     ports:
-      - "${PORT}:80"
+      - ${PORT}:80
+    networks:
+      - local
     env_file:
-      - backend/compose.env
+      - compose.env
+    volumes:
+      - ./:/code
     depends_on:
       db:
         condition: service_healthy
       minio:
         condition: service_healthy
-
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    ports:
-      - "3000:80"
 
   db:
     image: postgres:17.4
@@ -28,6 +26,10 @@ services:
       - POSTGRES_USER=${POSTGRES_USER}
       - PGUSER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    networks:
+      - local
     volumes:
       - db_data:/var/lib/postgresql/data
     healthcheck:
@@ -41,6 +43,8 @@ services:
     image: minio/minio:RELEASE.2025-02-28T09-55-16Z
     command: server /data --console-address ":9001"
     restart: no
+    networks:
+      - local
     ports:
       - "${MINIO_PORT}:9000"
       - "${MINIO_CONSOLE_PORT}:9001"
@@ -62,3 +66,7 @@ volumes:
     driver: local
   minio_data:
     driver: local
+
+networks:
+  local:
+    driver: bridge

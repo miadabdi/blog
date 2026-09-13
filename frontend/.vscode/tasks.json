@@ -1,0 +1,124 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Run ESLint to verify no-unused-vars disabled",
+      "type": "shell",
+      "command": "pnpm -s eslint .",
+      "problemMatcher": ["$eslint-stylish"]
+    },
+    {
+      "label": "Run ESLint again",
+      "type": "shell",
+      "command": "pnpm -s eslint .",
+      "problemMatcher": ["$eslint-stylish"]
+    },
+    {
+      "label": "Run ESLint after override split",
+      "type": "shell",
+      "command": "pnpm -s eslint .",
+      "problemMatcher": ["$eslint-stylish"]
+    },
+    {
+      "label": "Run ESLint final check",
+      "type": "shell",
+      "command": "pnpm -s eslint .",
+      "problemMatcher": ["$eslint-stylish"]
+    },
+    {
+      "label": "Type Check",
+      "type": "shell",
+      "command": "pnpm type-check",
+      "problemMatcher": ["$tsc"],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      }
+    },
+    {
+      "label": "Build Project",
+      "type": "shell",
+      "command": "pnpm build",
+      "problemMatcher": ["$tsc"],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "Start Dev Server",
+      "type": "shell",
+      "command": "pnpm dev",
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^([^\\s].*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "severity": 4,
+          "message": 5
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".",
+          "endsPattern": "(Local:|ready in|Local:.*http)"
+        }
+      }
+    },
+    {
+      "label": "Preview Build",
+      "type": "shell",
+      "command": "pnpm preview",
+      "isBackground": true
+    },
+    {
+      "label": "Format Code with Prettier",
+      "type": "shell",
+      "command": "pnpm prettier --write src/**/*.{js,jsx,ts,tsx,json,css,md}",
+      "problemMatcher": []
+    },
+    {
+      "label": "Lint and Fix",
+      "type": "shell",
+      "command": "pnpm eslint . --fix",
+      "problemMatcher": ["$eslint-stylish"]
+    },
+    {
+      "label": "Check Dependencies",
+      "type": "shell",
+      "command": "pnpm outdated",
+      "problemMatcher": []
+    },
+    {
+      "label": "Update Dependencies",
+      "type": "shell",
+      "command": "pnpm update",
+      "problemMatcher": []
+    },
+    {
+      "label": "Clean Install",
+      "type": "shell",
+      "command": "rm -rf node_modules pnpm-lock.yaml && pnpm install",
+      "problemMatcher": []
+    },
+    {
+      "label": "Validate Commit Message",
+      "type": "shell",
+      "command": "echo '${input:commitMessage}' | pnpm commitlint",
+      "problemMatcher": []
+    },
+    {
+      "label": "Run All Checks",
+      "dependsOn": ["Type Check", "Lint and Fix", "Build Project"],
+      "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    {
+      "id": "commitMessage",
+      "type": "promptString",
+      "description": "Enter commit message to validate"
+    }
+  ]
+}

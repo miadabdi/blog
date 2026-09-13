@@ -1,0 +1,102 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths: ['frontend/**']
+  pull_request:
+    branches: [main]
+    paths: ['frontend/**']
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    env:
+      CI: true
+      NODE_ENV: production
+      HUSKY: 0 # skip husky install in CI
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/pnpm/store
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('frontend/pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-store-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Type check
+        run: pnpm run type-check
+
+      - name: Build
+        run: pnpm run build:ci
+
+      # - name: Upload build artifact
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: dist
+      #     path: dist
+#   deploy:
+#     name: Deploy to GitHub Pages
+#     runs-on: ubuntu-latest
+#     needs: build
+#     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+#     steps:
+#       - name: Checkout
+#         uses: actions/checkout@v4
+
+#       - name: Download artifact
+#         uses: actions/download-artifact@v4
+#         with:
+#           name: dist
+#           path: dist
+
+#       - name: Deploy to gh-pages
+#         uses: peaceiris/actions-gh-pages@v4
+#         with:
+#           publish_dir: ./dist
+#           publish_branch: gh-pages
+#           github_token: ${{ secrets.GITHUB_TOKEN }}
+#     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+#     steps:
+#       - name: Checkout
+#         uses: actions/checkout@v4
+
+#       - name: Download artifact
+#         uses: actions/download-artifact@v4
+#         with:
+#           name: dist
+#           path: dist
+
+#       - name: Deploy to gh-pages
+#         uses: peaceiris/actions-gh-pages@v4
+#         with:
+#           publish_dir: ./dist
+#           publish_branch: gh-pages
+#           github_token: ${{ secrets.GITHUB_TOKEN }}
