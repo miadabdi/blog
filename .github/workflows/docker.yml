@@ -29,7 +29,7 @@ jobs:
 
       - name: Extract project version
         working-directory: frontend
-        run: echo "version=$(node -p require('./package.json').version)" >> "$GITHUB_OUTPUT"
+        run: echo "version=$(jq -r .version package.json)" >> "$GITHUB_OUTPUT"
         id: package_ver
 
       - name: Set Date and Package Version
