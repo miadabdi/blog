@@ -23,12 +23,12 @@ class Settings(BaseSettings):
         SECRET_KEY (str): Secret key for JWT.
         ALGORITHM (str): JWT algorithm.
         ACCESS_TOKEN_EXPIRE_MINUTES (int): JWT token expiry.
-        MINIO_SECURE (bool): Use HTTPS for MinIO.
-        MINIO_ENDPOINT (str): MinIO endpoint.
-        MINIO_PORT (int): MinIO port.
-        MINIO_ACCESS_KEY (str): MinIO access key.
-        MINIO_SECRET_KEY (str): MinIO secret key.
-        MINIO_BUCKET_NAMES (list[str]): List of MinIO bucket names.
+        S3_SECURE (bool): Use HTTPS for S3.
+        S3_ENDPOINT (str): S3 endpoint.
+        S3_PORT (int): S3 port.
+        S3_ACCESS_KEY (str): S3 access key.
+        S3_SECRET_KEY (str): S3 secret key.
+        S3_BUCKET_NAMES (list[str]): List of S3 bucket names.
     """
 
     app_name: str = "Blog"
@@ -48,12 +48,12 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(ge=10)
 
-    MINIO_SECURE: bool = Field(default=False)
-    MINIO_ENDPOINT: str = Field(min_length=1)
-    MINIO_PORT: int = Field(gt=0, lt=65536)
-    MINIO_ACCESS_KEY: str = Field(min_length=1)
-    MINIO_SECRET_KEY: str = Field(min_length=1)
-    MINIO_BUCKET_NAMES: list[str] = ["images", "files"]
+    S3_SECURE: bool = Field(default=False)
+    S3_ENDPOINT: str = Field(min_length=1)
+    S3_PORT: int = Field(gt=0, lt=65536)
+    S3_ACCESS_KEY: str = Field(min_length=1)
+    S3_SECRET_KEY: str = Field(min_length=1)
+    S3_BUCKET_NAMES: list[str] = ["images", "files"]
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

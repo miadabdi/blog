@@ -4,7 +4,8 @@ from logging.config import fileConfig
 
 # Load environment variables from .env file
 from dotenv import load_dotenv
-from sqlalchemy import create_engine
+from sqlalchemy.ext.asyncio import async_engine_from_config
+from sqlalchemy.pool import NullPool
 from sqlmodel import SQLModel
 
 from alembic import context
@@ -130,15 +131,7 @@ def run_migrations_online() -> None:
             # is removed for those tables.   Needs a recursive function.
             directive.ops = list(_filter_drop_indexes(directive.ops, tables_dropped))
 
-    # connectable = engine_from_config(
-    #     config.get_section(config.config_ini_section, {}),
-    #     prefix="sqlalchemy.",
-    #     poolclass=pool.NullPool,
-    # )
-
-    connectable = create_engine(url)
-
-    with connectable.connect() as connection:
+    def do_run_migrations(connection) -> None:
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
@@ -147,6 +140,23 @@ def run_migrations_online() -> None:
 
         with context.begin_transaction():
             context.run_migrations()
+
+    # use the app's async driver (asyncpg) so migrations need no extra psycopg2 dependency
+    async def run_async_migrations() -> None:
+        connectable = async_engine_from_config(
+            {"sqlalchemy.url": re.sub(r"^postgresql://", "postgresql+asyncpg://", url)},
+            prefix="sqlalchemy.",
+            poolclass=NullPool,
+        )
+
+        async with connectable.connect() as connection:
+            await connection.run_sync(do_run_migrations)
+
+        await connectable.dispose()
+
+    import asyncio
+
+    asyncio.run(run_async_migrations())
 
 
 if context.is_offline_mode():

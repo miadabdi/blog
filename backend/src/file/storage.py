@@ -1,6 +1,6 @@
 """
-MinioService: Service for interacting with MinIO storage.
-Provides methods for bucket management, presigned URL generation, file deletion, notifications, and health checks.
+StorageService: S3-compatible object storage via the minio client library (SeaweedFS, MinIO, AWS S3).
+Provides methods for bucket management, presigned URL generation, file deletion, and health checks.
 """
 
 import logging
@@ -10,15 +10,8 @@ from functools import lru_cache, wraps
 from typing import Any, Dict, List
 
 from minio import Minio
-from minio.datatypes import PostPolicy
 from minio.deleteobjects import DeleteObject
 from minio.error import InvalidResponseError, S3Error
-from minio.notificationconfig import (
-    NotificationConfig,
-    PrefixFilterRule,
-    QueueConfig,
-    SuffixFilterRule,
-)
 
 from ..common.exceptions.exceptions import EntityNotFoundException, InternalException
 from ..common.handle_sync import _handle_sync
@@ -28,20 +21,20 @@ from ..common.settings import settings
 logger = logging.getLogger(__name__)
 
 
-class MinioServiceError(Exception):
-    """Custom exception for MinIO service errors."""
+class StorageServiceError(Exception):
+    """Custom exception for storage service errors."""
 
     pass
 
 
-class MinioService:
+class StorageService:
     """
-    Service for interacting with MinIO storage.
+    S3-compatible object storage via the minio client library.
 
     - Singleton pattern for Minio client.
     - Ensures all required buckets exist at startup.
     - Provides methods to create presigned URLs for file uploads and downloads.
-    - Provides notification and deletion utilities.
+    - Provides presigned URL generation and deletion utilities.
     """
 
     _instance = None
@@ -52,7 +45,7 @@ class MinioService:
         if cls._instance is None:
             with cls._lock:
                 if cls._instance is None:
-                    cls._instance = super(MinioService, cls).__new__(cls)
+                    cls._instance = super(StorageService, cls).__new__(cls)
         return cls._instance
 
     def __init__(
@@ -63,36 +56,35 @@ class MinioService:
         secure: bool | None,
     ):
         """
-        Initialize MinIO service.
+        Initialize storage service.
 
         Args:
-            endpoint (str | None): MinIO server endpoint.
-            access_key (str | None): Access key for MinIO.
-            secret_key (str | None): Secret key for MinIO.
+            endpoint (str | None): S3 server endpoint.
+            access_key (str | None): Access key.
+            secret_key (str | None): Secret key.
             secure (bool | None): Use HTTPS if True, HTTP if False.
 
         Raises:
-            MinioServiceError: If credentials are missing or connection fails.
+            StorageServiceError: If credentials are missing or connection fails.
         """
 
-        print("MINIO SERVICE CREATION")
 
         # Prevent re-initialization of singleton
         if hasattr(self, "_initialized"):
             return
 
         # Get configuration from environment variables if not provided
-        self.endpoint = endpoint or f"{settings.MINIO_ENDPOINT}:{settings.MINIO_PORT}"
-        self.access_key = access_key or settings.MINIO_ACCESS_KEY
-        self.secret_key = secret_key or settings.MINIO_SECRET_KEY
-        self.secure = secure or settings.MINIO_SECURE
-        self.bucket_names = settings.MINIO_BUCKET_NAMES
+        self.endpoint = endpoint or f"{settings.S3_ENDPOINT}:{settings.S3_PORT}"
+        self.access_key = access_key or settings.S3_ACCESS_KEY
+        self.secret_key = secret_key or settings.S3_SECRET_KEY
+        self.secure = secure or settings.S3_SECURE
+        self.bucket_names = settings.S3_BUCKET_NAMES
 
         if not self.access_key or not self.secret_key:
-            raise MinioServiceError("MinIO access key and secret key must be provided")
+            raise StorageServiceError("S3 access key and secret key must be provided")
 
         try:
-            # Initialize MinIO client
+            # Initialize S3 client
             self.client = Minio(
                 endpoint=self.endpoint,
                 access_key=self.access_key,
@@ -102,11 +94,11 @@ class MinioService:
 
             # Test connection
             self.client.list_buckets()
-            logger.info(f"Successfully connected to MinIO at {self.endpoint}")
+            logger.info(f"Successfully connected to S3 storage at {self.endpoint}")
 
         except Exception as e:
-            logger.error(f"Failed to initialize MinIO client: {str(e)}")
-            raise MinioServiceError(f"Failed to connect to MinIO: {str(e)}")
+            logger.error(f"Failed to initialize S3 client: {str(e)}")
+            raise StorageServiceError(f"Failed to connect to storage: {str(e)}")
 
         # Ensure all buckets exist at startup
         if self.bucket_names:
@@ -115,18 +107,18 @@ class MinioService:
         self._initialized = True
 
     @staticmethod
-    def _handle_minio_errors(func):
-        """Decorator to handle MinIO errors consistently."""
+    def _handle_storage_errors(func):
+        """Decorator to handle storage errors consistently."""
 
         @wraps(func)
         def wrapper(self, *args, **kwargs):
             try:
                 return func(self, *args, **kwargs)
             except S3Error as e:
-                logger.error(f"MinIO S3 error in {func.__name__}: {e}")
+                logger.error(f"S3 error in {func.__name__}: {e}")
                 raise InternalException(message=f"Storage error: {e}")
             except InvalidResponseError as e:
-                logger.error(f"MinIO invalid response in {func.__name__}: {e}")
+                logger.error(f"Invalid S3 response in {func.__name__}: {e}")
                 raise InternalException(message="Storage service error")
             except Exception as e:
                 logger.error(f"Unexpected error in {func.__name__}: {e}")
@@ -134,7 +126,7 @@ class MinioService:
 
         return wrapper
 
-    @_handle_minio_errors
+    @_handle_storage_errors
     def ensure_buckets_exist(self, bucket_names: List[str]) -> Dict[str, bool]:
         """
         Ensure that all specified buckets exist, create them if they don't.
@@ -187,59 +179,7 @@ class MinioService:
         return bucket_name.replace("-", "").replace(".", "").isalnum()
 
     @_handle_sync
-    @_handle_minio_errors
-    def create_presigned_upload_url(
-        self,
-        bucket_name: str,
-        object_name: str,
-        expires: timedelta = timedelta(hours=1),
-        max_file_size: int = 10 * 1024 * 1024,
-    ) -> Dict[str, Any]:
-        """
-        Create a presigned URL for file upload with size and type restrictions.
-
-        Args:
-            bucket_name (str): Name of the bucket.
-            object_name (str): Name of the object to upload.
-            expires (timedelta): URL expiration time.
-            max_file_size (int): Maximum allowed file size in bytes.
-
-        Returns:
-            Dict[str, Any]: Presigned URL and upload conditions.
-
-        Raises:
-            InternalException: If URL creation fails.
-        """
-        # Convert to datetime by adding to current time
-        expiration_time = datetime.now(timezone.utc) + expires
-
-        # Create PostPolicy object
-        policy = PostPolicy(bucket_name, expiration_time)
-        policy.add_equals_condition("key", object_name)
-        policy.add_content_length_range_condition(1, max_file_size)
-
-        # if allowed_content_types:
-        #     for content_type in allowed_content_types:
-        #         policy.add_starts_with_condition(
-        #             "content-type", content_type.split("/")[0]
-        #         )
-
-        try:
-            presigned_post = self.client.presigned_post_policy(policy)
-
-            logger.info(f"Created presigned upload URL for {bucket_name}/{object_name}")
-
-            return {
-                "bucket_name": bucket_name,
-                "form_data": presigned_post,
-            }
-
-        except Exception as e:
-            logger.error(f"Failed to create presigned upload URL: {e}")
-            raise InternalException(message="Failed to create upload URL")
-
-    @_handle_sync
-    @_handle_minio_errors
+    @_handle_storage_errors
     def create_presigned_download_url(
         self,
         bucket_name: str,
@@ -289,10 +229,10 @@ class MinioService:
             raise
 
     @_handle_sync
-    @_handle_minio_errors
+    @_handle_storage_errors
     def delete_file(self, bucket_name: str, object_name: str) -> bool:
         """
-        Delete a file from MinIO storage.
+        Delete a file from S3 storage.
 
         Args:
             bucket_name (str): Name of the bucket.
@@ -318,7 +258,7 @@ class MinioService:
             raise
 
     @_handle_sync
-    @_handle_minio_errors
+    @_handle_storage_errors
     def delete_files(
         self, bucket_name: str, object_names: List[str]
     ) -> Dict[str, bool]:
@@ -360,59 +300,7 @@ class MinioService:
             return {obj_name: False for obj_name in object_names}
 
     @_handle_sync
-    @_handle_minio_errors
-    def setup_bucket_notification(
-        self,
-        bucket_name: str,
-        queue_arn: str,
-        events: List[str] | None = None,
-        prefix: str = "",
-        suffix: str = "",
-    ) -> bool:
-        """
-        Setup bucket notification for file upload events.
-
-        Args:
-            bucket_name (str): Name of the bucket.
-            queue_arn (str): ARN of the notification queue (e.g., SQS, SNS).
-            events (List[str] | None): List of events to listen for.
-            prefix (str): Object key prefix filter.
-            suffix (str): Object key suffix filter.
-
-        Returns:
-            bool: True if notification was set up successfully, False otherwise.
-        """
-        # Bucket existence is ensured at startup; no per-operation check needed
-
-        if events is None:
-            events = ["s3:ObjectCreated:*"]
-
-        try:
-            # Create filter rules
-            prefix_rule = PrefixFilterRule(prefix) if prefix else None
-            suffix_rule = SuffixFilterRule(suffix) if suffix else None
-
-            # Create notification configuration
-            queue_config = QueueConfig(
-                queue_arn,
-                events,
-                config_id="upload-notification",
-                prefix_filter_rule=prefix_rule,
-                suffix_filter_rule=suffix_rule,
-            )
-
-            notification_config = NotificationConfig(queue_config_list=[queue_config])
-
-            self.client.set_bucket_notification(bucket_name, notification_config)
-            logger.info(f"Set up notification for bucket {bucket_name}")
-            return True
-
-        except Exception as e:
-            logger.error(f"Failed to set up bucket notification: {e}")
-            return False
-
-    @_handle_sync
-    @_handle_minio_errors
+    @_handle_storage_errors
     def list_objects(
         self,
         bucket_name: str,
@@ -468,7 +356,7 @@ class MinioService:
             raise InternalException(message="Failed to list objects")
 
     @_handle_sync
-    @_handle_minio_errors
+    @_handle_storage_errors
     def get_object_info(self, bucket_name: str, object_name: str) -> Dict[str, Any]:
         """
         Get detailed information about an object.
@@ -509,7 +397,7 @@ class MinioService:
             raise
 
     @_handle_sync
-    @_handle_minio_errors
+    @_handle_storage_errors
     def health_check(self) -> Dict[str, Any]:
         """
         Perform a health check on the MinIO service.
@@ -538,7 +426,7 @@ class MinioService:
             }
 
     @_handle_sync
-    @_handle_minio_errors
+    @_handle_storage_errors
     def create_presigned_put_upload_url(
         self,
         bucket_name: str,
@@ -589,25 +477,25 @@ class MinioService:
 
 # Factory function for dependency injection in FastAPI
 @lru_cache
-def get_MinioService(
+def get_StorageService(
     endpoint: str | None = None,
     access_key: str | None = None,
     secret_key: str | None = None,
     secure: bool | None = None,
-) -> MinioService:
+) -> StorageService:
     """
-    Factory function to get MinioService instance.
+    Factory function to get StorageService instance.
     Can be used as a FastAPI dependency.
 
     Args:
-        endpoint (str | None): MinIO server endpoint.
-        access_key (str | None): Access key for MinIO.
-        secret_key (str | None): Secret key for MinIO.
+        endpoint (str | None): S3 server endpoint.
+        access_key (str | None): Access key.
+        secret_key (str | None): Secret key.
         secure (bool | None): Use HTTPS if True, HTTP if False.
 
     Returns:
-        MinioService: The MinioService singleton instance.
+        StorageService: The StorageService singleton instance.
     """
-    return MinioService(
+    return StorageService(
         endpoint=endpoint, access_key=access_key, secret_key=secret_key, secure=secure
     )

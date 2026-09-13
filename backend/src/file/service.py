@@ -10,20 +10,20 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from .minio import MinioService, get_MinioService
+from .storage import StorageService, get_StorageService
 
 
 class FileService:
     """
-    Service class for managing file operations via MinIO.
+    Service class for managing file operations via S3-compatible storage.
     """
 
-    def __init__(self, minio: MinioService):
+    def __init__(self, minio: StorageService):
         """
-        Initialize FileService with a MinioService instance.
+        Initialize FileService with a StorageService instance.
 
         Args:
-            minio (MinioService): The MinioService instance.
+            minio (StorageService): The StorageService instance.
         """
         self.minio = minio
 
@@ -45,44 +45,42 @@ class FileService:
         self, uploadname: str, expires_seconds: int = 3600
     ) -> dict:
         """
-        Create a presigned URL for uploading an image to the 'images' bucket (max 10MB).
+        Create a presigned PUT URL for uploading an image to the 'images' bucket (max 10MB).
 
         Args:
             uploadname (str): The original filename.
             expires_seconds (int): Expiry time for the URL in seconds.
 
         Returns:
-            dict: Presigned URL and form data for upload.
+            dict: Presigned PUT URL and metadata for upload.
         """
         object_name = self._generate_unique_object_name(uploadname)
-        return await self.minio.create_presigned_upload_url(
+        return await self.minio.create_presigned_put_upload_url(
             bucket_name="images",
             object_name=object_name,
             expires=timedelta(seconds=expires_seconds),
-            max_file_size=10 * 1024 * 1024,  # 10MB
-            # allowed_content_types=["image/"],
+            max_file_size=10 * 1024 * 1024,  # 10MB (documented; not enforced by the URL)
         )
 
     async def create_file_upload_url(
         self, uploadname: str, expires_seconds: int = 3600
     ) -> dict:
         """
-        Create a presigned URL for uploading a general file to the 'files' bucket (max 100MB, disallow images).
+        Create a presigned PUT URL for uploading a general file to the 'files' bucket (max 100MB).
 
         Args:
             uploadname (str): The original filename.
             expires_seconds (int): Expiry time for the URL in seconds.
 
         Returns:
-            dict: Presigned URL and form data for upload.
+            dict: Presigned PUT URL and metadata for upload.
         """
         object_name = self._generate_unique_object_name(uploadname)
-        return await self.minio.create_presigned_upload_url(
+        return await self.minio.create_presigned_put_upload_url(
             bucket_name="files",
             object_name=object_name,
             expires=timedelta(seconds=expires_seconds),
-            max_file_size=100 * 1024 * 1024,  # 100MB
-            # allowed_content_types=["application/", "text/"],
+            max_file_size=100 * 1024 * 1024,  # 100MB (documented; not enforced by the URL)
         )
 
     async def create_download_url(
@@ -108,13 +106,13 @@ class FileService:
 
 @lru_cache
 def get_FileService(
-    categoryRepository: Annotated[MinioService, Depends(get_MinioService)],
+    categoryRepository: Annotated[StorageService, Depends(get_StorageService)],
 ) -> FileService:
     """
     Dependency injector for FileService.
 
     Args:
-        categoryRepository (MinioService): The MinioService instance.
+        categoryRepository (StorageService): The StorageService instance.
 
     Returns:
         FileService: The FileService instance.

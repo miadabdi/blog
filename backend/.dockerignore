@@ -1,9 +1,7 @@
 .venv
 .vscode
-alembic
 .env
 .gitignore
-alembic.ini
 docker-compose.yml
 LICENSE
 README.md

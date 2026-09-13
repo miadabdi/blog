@@ -4,7 +4,7 @@ Personal blog — monorepo: FastAPI backend + React frontend.
 
 | Path | What |
 |------|------|
-| `backend/` | FastAPI app (SQLAlchemy 2, Alembic, MinIO) — see [backend/README.md](backend/README.md) |
+| `backend/` | FastAPI app (SQLAlchemy 2, Alembic, SeaweedFS (S3)) — see [backend/README.md](backend/README.md) |
 | `frontend/` | React SPA (Vite, TypeScript, pnpm) |
 
 ## Full stack (root compose)
@@ -16,7 +16,7 @@ docker compose up --build
 
 - API: http://localhost:8081/health
 - UI: http://localhost:3000
-- MinIO console: http://localhost:9001
+- SeaweedFS filer UI: http://localhost:8888 (S3 API on :8333)
 
 Run from the repo root (the `env_file` path is relative). No bind-mounts or `--reload` here — this file is the deploy artifact.
 
@@ -32,16 +32,16 @@ Keeps the bind-mount + `uvicorn --reload` workflow from `backend/compose.env` / 
 
 | File | Used by | Hosts |
 |------|---------|-------|
-| `backend/compose.env` | app container env (both composes) | `db`, `minio` |
+| `backend/compose.env` | app container env (both composes) | `db`, `seaweedfs` |
 | `backend/.env` | backend compose interpolation + host-run app/alembic | `127.0.0.1` |
-| root `.env` | root compose interpolation (`PORT`, `POSTGRES_*`, `MINIO_*`) | — |
+| root `.env` | root compose interpolation (`PORT`, `POSTGRES_*`, `S3_*`) | — |
 
 Fresh clone:
 
 ```bash
 cp backend/compose.env.example backend/compose.env
 cp backend/compose.env backend/.env && cp backend/compose.env .env && printf '\nPORT=8081\n' >> .env
-# then set POSTGRES_HOST / MINIO_ENDPOINT to 127.0.0.1 in backend/.env
+# then set POSTGRES_HOST / S3_ENDPOINT to 127.0.0.1 in backend/.env
 ```
 
 ## Migrations
