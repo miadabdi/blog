@@ -1,4 +1,4 @@
-FROM python:3.13.5-slim-bookworm AS builder
+FROM python:3.13.15-slim-bookworm AS builder
 
 # Set working directory
 WORKDIR /code
@@ -11,7 +11,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
     pip install --prefix=/install --no-compile --no-cache-dir -r requirements.txt
 
 
-FROM python:3.13.5-slim-bookworm
+FROM python:3.13.15-slim-bookworm
 
 # Create a non-root user for security
 RUN groupadd -r appuser && useradd -r -g appuser appuser

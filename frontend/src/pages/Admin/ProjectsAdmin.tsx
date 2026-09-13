@@ -32,6 +32,8 @@ export default function ProjectsAdmin() {
 
   const [form, setForm] = useState<Project>(initial);
   useEffect(() => {
+    // ponytail: mock-page resync; rebuild with real API state management
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setForm(initial);
   }, [initial]);
   const [techInput, setTechInput] = useState('');
@@ -54,7 +56,7 @@ export default function ProjectsAdmin() {
     void navigate('/admin/projects');
   }
 
-  function remove(id: string) {
+  function remove(_id: string) {
     if (confirm('Delete this project?')) {
       void navigate('/admin/projects');
     }

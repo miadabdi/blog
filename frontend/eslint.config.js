@@ -15,7 +15,7 @@ export default tseslint.config([
       ...tseslint.configs.recommendedTypeChecked,
       // keep other useful configs
       js.configs.recommended,
-      reactHooks.configs['recommended-latest'],
+      reactHooks.configs.flat['recommended-latest'],
       reactRefresh.configs.vite,
     ],
     languageOptions: {

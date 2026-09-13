@@ -1,8 +1,8 @@
 # Build stage
-FROM node:22-alpine AS builder
+FROM node:24.21.0-alpine AS builder
 
 # Enable Corepack for pnpm
-RUN corepack enable && corepack prepare pnpm@10.9.0 --activate
+RUN corepack enable && corepack prepare pnpm@11.27.0 --activate
 
 WORKDIR /app
 
@@ -19,7 +19,7 @@ COPY . .
 RUN pnpm run build:ci
 
 # Production stage
-FROM nginx:1.29.1-alpine AS production
+FROM nginx:1.31.5-alpine AS production
 
 # Copy built files from builder
 COPY --from=builder /app/dist /usr/share/nginx/html

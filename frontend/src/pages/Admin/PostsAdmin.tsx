@@ -33,6 +33,8 @@ export default function PostsAdmin() {
 
   const [form, setForm] = useState<Post>(initial);
   useEffect(() => {
+    // ponytail: mock-page resync; rebuild with real API state management
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setForm(initial);
   }, [initial]);
   const [tagInput, setTagInput] = useState('');
@@ -55,7 +57,7 @@ export default function PostsAdmin() {
     void navigate('/admin/posts');
   }
 
-  function remove(id: string) {
+  function remove(_id: string) {
     if (confirm('Delete this post?')) {
       void navigate('/admin/posts');
     }
