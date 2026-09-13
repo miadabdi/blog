@@ -3,10 +3,10 @@ name: CI
 on:
   push:
     branches: [main]
-    paths: ['frontend/**']
+    paths: ['frontend/**', '.github/workflows/**']
   pull_request:
     branches: [main]
-    paths: ['frontend/**']
+    paths: ['frontend/**', '.github/workflows/**']
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -27,18 +27,18 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: '22'
+          node-version: '24'
 
       - name: Enable Corepack
         run: corepack enable
 
       - name: Setup pnpm cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.local/share/pnpm/store
           key: pnpm-store-${{ runner.os }}-${{ hashFiles('frontend/pnpm-lock.yaml') }}
@@ -69,7 +69,7 @@ jobs:
 #     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 #     steps:
 #       - name: Checkout
-#         uses: actions/checkout@v4
+#         uses: actions/checkout@v7
 
 #       - name: Download artifact
 #         uses: actions/download-artifact@v4
@@ -86,7 +86,7 @@ jobs:
 #     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 #     steps:
 #       - name: Checkout
-#         uses: actions/checkout@v4
+#         uses: actions/checkout@v7
 
 #       - name: Download artifact
 #         uses: actions/download-artifact@v4
