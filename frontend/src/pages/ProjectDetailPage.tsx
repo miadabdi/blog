@@ -2,16 +2,25 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeftIcon, ExternalLinkIcon, GithubIcon } from '@/components/ui/icons';
-import { getProject } from '@/lib/storage';
+import { EditorContent } from '@/components/editor-content';
+import { useProjectBySlug } from '@/lib/queries';
 import { Link, useParams } from 'react-router-dom';
 
 export function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
-  console.log('id', id);
-  const project = id ? getProject(id) : null;
-  console.log('project', project);
+  const { data: project, isLoading, isError } = useProjectBySlug(id);
 
-  if (!project) {
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-16">
+          <p className="text-muted-foreground">Loading project…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!project || isError) {
     return (
       <div className="min-h-screen bg-background">
         <div className="container mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-16">
@@ -32,8 +41,6 @@ export function ProjectDetailPage() {
     );
   }
 
-  // Icons were previously dynamic; optional future enhancement to store an icon key
-
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-16">
@@ -48,7 +55,7 @@ export function ProjectDetailPage() {
         <div className="mb-8">
           <div className="mb-6">
             <h1 className="text-4xl font-bold">{project.title}</h1>
-            <p className="text-xl text-muted-foreground mt-2">{project.description}</p>
+            <p className="text-xl text-muted-foreground mt-2">{project.summary}</p>
           </div>
 
           <div className="flex flex-wrap gap-2 mb-6">
@@ -60,18 +67,26 @@ export function ProjectDetailPage() {
           </div>
 
           <div className="flex space-x-4 mb-8">
-            <Button variant="outline" className="flex-1">
-              <GithubIcon className="mr-2 h-5 w-5" />
-              View Source Code
-            </Button>
-            <Button variant="outline" className="flex-1">
-              <ExternalLinkIcon className="mr-2 h-5 w-5" />
-              Live Demo
-            </Button>
+            {project.github_url && (
+              <a href={project.github_url} target="_blank" rel="noreferrer" className="flex-1">
+                <Button variant="outline" className="w-full">
+                  <GithubIcon className="mr-2 h-5 w-5" />
+                  View Source Code
+                </Button>
+              </a>
+            )}
+            {project.demo_url && (
+              <a href={project.demo_url} target="_blank" rel="noreferrer" className="flex-1">
+                <Button variant="outline" className="w-full">
+                  <ExternalLinkIcon className="mr-2 h-5 w-5" />
+                  Live Demo
+                </Button>
+              </a>
+            )}
           </div>
         </div>
 
-        {project.images && project.images.length > 0 && (
+        {project.images.length > 0 && (
           <div className="mb-8">
             <img
               src={project.images[0]}
@@ -86,11 +101,9 @@ export function ProjectDetailPage() {
             <CardTitle>Project Details</CardTitle>
           </CardHeader>
           <CardContent>
-            <div
+            <EditorContent
+              body={project.body}
               className="prose prose-lg max-w-none prose-headings:text-foreground prose-p:text-foreground prose-li:text-foreground prose-strong:text-foreground"
-              dangerouslySetInnerHTML={{
-                __html: project.content,
-              }}
             />
           </CardContent>
         </Card>
@@ -104,14 +117,22 @@ export function ProjectDetailPage() {
               </Button>
             </Link>
             <div className="flex space-x-3">
-              <Button variant="outline" size="sm">
-                <GithubIcon className="mr-2 h-4 w-4" />
-                GitHub
-              </Button>
-              <Button variant="outline" size="sm">
-                <ExternalLinkIcon className="mr-2 h-4 w-4" />
-                Live Demo
-              </Button>
+              {project.github_url && (
+                <a href={project.github_url} target="_blank" rel="noreferrer">
+                  <Button variant="outline" size="sm">
+                    <GithubIcon className="mr-2 h-4 w-4" />
+                    GitHub
+                  </Button>
+                </a>
+              )}
+              {project.demo_url && (
+                <a href={project.demo_url} target="_blank" rel="noreferrer">
+                  <Button variant="outline" size="sm">
+                    <ExternalLinkIcon className="mr-2 h-4 w-4" />
+                    Live Demo
+                  </Button>
+                </a>
+              )}
             </div>
           </div>
         </div>

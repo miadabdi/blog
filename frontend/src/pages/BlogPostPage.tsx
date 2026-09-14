@@ -7,14 +7,26 @@ import {
   ExternalLinkIcon,
   GithubIcon,
 } from '@/components/ui/icons';
-import { getPost } from '@/lib/storage';
+import { EditorContent } from '@/components/editor-content';
+import { usePostBySlug } from '@/lib/queries';
+import { postDate, readTime, tagNames } from '@/lib/types';
 import { Link, useParams } from 'react-router-dom';
 
 export function BlogPostPage() {
   const { id } = useParams<{ id: string }>();
-  const post = id ? getPost(id) : null;
+  const { data: post, isLoading, isError } = usePostBySlug(id);
 
-  if (!post) {
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-16">
+          <p className="text-muted-foreground">Loading post…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!post || isError) {
     return (
       <div className="min-h-screen bg-background">
         <div className="container mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-16">
@@ -48,28 +60,30 @@ export function BlogPostPage() {
 
         <article className="prose prose-lg max-w-none">
           <div className="mb-8">
-            <img
-              src={post.image}
-              alt={post.title}
-              className="w-full h-64 object-cover rounded-lg mb-6"
-            />
+            {post.featured_image && (
+              <img
+                src={post.featured_image}
+                alt={post.title}
+                className="w-full h-64 object-cover rounded-lg mb-6"
+              />
+            )}
 
-            <div className="flex items-center space-x-4 text-sm text-muted-foreground mb-4">
+            <div className="flex items-center space-x-4 text-sm text-muted-foreground mb-4 not-prose">
               <div className="flex items-center space-x-2">
                 <CalendarIcon className="h-4 w-4" />
-                <span>{new Date(post.date).toLocaleDateString()}</span>
+                <span>{postDate(post)}</span>
               </div>
               <div className="flex items-center space-x-2">
                 <ClockIcon className="h-4 w-4" />
-                <span>{post.readTime}</span>
+                <span>{readTime(post.body)}</span>
               </div>
             </div>
 
             <h1 className="text-4xl font-bold mb-4">{post.title}</h1>
-            <p className="text-xl text-muted-foreground mb-6">{post.description}</p>
+            <p className="text-xl text-muted-foreground mb-6">{post.summary}</p>
 
-            <div className="flex flex-wrap gap-2 mb-8">
-              {post.tags.map((tag) => (
+            <div className="flex flex-wrap gap-2 mb-8 not-prose">
+              {tagNames(post).map((tag) => (
                 <Badge key={tag} variant="secondary">
                   {tag}
                 </Badge>
@@ -77,9 +91,9 @@ export function BlogPostPage() {
             </div>
           </div>
 
-          <div
+          <EditorContent
+            body={post.body}
             className="prose prose-lg max-w-none prose-headings:text-foreground prose-p:text-foreground prose-li:text-foreground prose-strong:text-foreground"
-            dangerouslySetInnerHTML={{ __html: post.content }}
           />
         </article>
 

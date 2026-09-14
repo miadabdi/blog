@@ -1,4 +1,5 @@
 import RouteError from '@/components/route-error';
+import { RequireAuth } from '@/components/require-auth';
 import RootLayout from '@/layouts/root-layout';
 import Home from '@/pages/Home';
 import { createBrowserRouter } from 'react-router-dom';
@@ -8,6 +9,7 @@ import PostsAdmin from './pages/Admin/PostsAdmin';
 import ProjectsAdmin from './pages/Admin/ProjectsAdmin';
 import { BlogPage } from './pages/BlogPage';
 import { BlogPostPage } from './pages/BlogPostPage';
+import LoginPage from './pages/LoginPage';
 import { ProjectDetailPage } from './pages/ProjectDetailPage';
 import { ProjectsPage } from './pages/ProjectsPage';
 
@@ -34,8 +36,16 @@ const router = createBrowserRouter([
         element: <ProjectDetailPage />,
       },
       {
+        path: 'login',
+        element: <LoginPage />,
+      },
+      {
         path: 'admin',
-        element: <AdminLayout />,
+        element: (
+          <RequireAuth>
+            <AdminLayout />
+          </RequireAuth>
+        ),
         children: [
           {
             index: true,

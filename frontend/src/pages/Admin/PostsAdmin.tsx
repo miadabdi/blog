@@ -2,71 +2,132 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { posts } from '@/lib/storage';
-import type { Post } from '@/lib/types';
-import { useEffect, useMemo, useState } from 'react';
+import { api, fileUrl } from '@/lib/api';
+import { createEditor } from '@/lib/editor';
+import { ensureTagIds, qk, useDeletePost, usePostById, usePosts, useSavePost } from '@/lib/queries';
+import { tagNames } from '@/lib/types';
+import type { EditorJSOutput } from 'editorjs-parser';
+import type EditorJS from '@editorjs/editorjs';
+import { useQueryClient } from '@tanstack/react-query';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 
-function emptyPost(): Post {
-  const today = new Date().toISOString().slice(0, 10);
-  return {
-    id: '',
-    title: '',
-    description: '',
-    date: today,
-    readTime: '5 min read',
-    tags: [],
-    image: '',
-    content: '<p> some </p>',
-  };
-}
+type FormState = {
+  title: string;
+  summary: string;
+  featured_image: string;
+  tags: string[];
+};
+
+const emptyForm: FormState = { title: '', summary: '', featured_image: '', tags: [] };
 
 export default function PostsAdmin() {
   const [params] = useSearchParams();
-  const editingId = params.get('id');
+  const editingParam = params.get('id');
+  const editingId = editingParam && editingParam !== 'new' ? Number(editingParam) : null;
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
-  const initial = useMemo(() => {
-    const found = editingId ? posts.find((p) => p.id === editingId) : undefined;
-    return found ?? emptyPost();
-  }, [editingId]);
+  const { data: posts } = usePosts();
+  const { data: editing } = usePostById(editingId);
 
-  const [form, setForm] = useState<Post>(initial);
-  useEffect(() => {
-    // ponytail: mock-page resync; rebuild with real API state management
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setForm(initial);
-  }, [initial]);
+  const [form, setForm] = useState<FormState>(emptyForm);
   const [tagInput, setTagInput] = useState('');
+  const [busy, setBusy] = useState(false);
 
-  function slugify(text: string) {
-    return text
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-');
+  const savePost = useSavePost();
+  const deletePost = useDeletePost();
+
+  // Editor.js lifecycle: one editor per editing session
+  const holderRef = useRef<HTMLDivElement>(null);
+  const editorRef = useRef<EditorJS | null>(null);
+
+  const sessionKey = editingId ?? 'new';
+  useEffect(() => {
+    if (editingParam == null && (posts?.length ?? 0) > 0) return; // list view
+    if (!holderRef.current) return;
+
+    let initialData: EditorJSOutput | null = null;
+    if (editing && editing.id === editingId) {
+      try {
+        initialData = JSON.parse(editing.body) as EditorJSOutput;
+      } catch {
+        initialData = null;
+      }
+    }
+
+    const editor = createEditor(holderRef.current, initialData);
+    editorRef.current = editor;
+    return () => {
+      void editor.destroy();
+      editorRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionKey, editing?.id]);
+
+  // hydrate form when the editing post loads
+  useEffect(() => {
+    if (editing && editing.id === editingId) {
+      // ponytail: hydrate form when the editing entity loads
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setForm({
+        title: editing.title,
+        summary: editing.summary,
+        featured_image: editing.featured_image,
+        tags: tagNames(editing),
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editing?.id]);
+
+  async function onImagePicked(files: FileList | null) {
+    if (!files?.length) return;
+    const fd = new FormData();
+    fd.append('file', files[0]);
+    const r = await api<{ bucket_name: string; object_name: string }>(
+      '/file/upload?bucket=images',
+      { method: 'POST', body: fd },
+    );
+    setForm((f) => ({ ...f, featured_image: fileUrl(r.bucket_name, r.object_name) }));
   }
 
-  function save() {
-    const id = form.id?.trim() || slugify(form.title || '');
-    if (!id) {
-      alert('Please add a title to generate an ID');
+  async function save() {
+    if (!form.title.trim() || !form.summary.trim()) {
+      alert('Title and description are required');
       return;
     }
-    void navigate('/admin/posts');
-  }
-
-  function remove(_id: string) {
-    if (confirm('Delete this post?')) {
+    setBusy(true);
+    try {
+      const output = editorRef.current ? await editorRef.current.save() : { blocks: [] };
+      const tag_ids = await ensureTagIds(form.tags);
+      await savePost.mutateAsync({
+        id: editingId ?? undefined,
+        data: {
+          title: form.title,
+          summary: form.summary,
+          body: JSON.stringify(output),
+          featured_image: form.featured_image || '/placeholder.svg',
+          tag_ids,
+        },
+      });
+      await queryClient.invalidateQueries({ queryKey: qk.tags });
       void navigate('/admin/posts');
+    } finally {
+      setBusy(false);
     }
   }
+
+  function remove(id: number) {
+    if (confirm('Delete this post?')) {
+      void deletePost.mutateAsync(id);
+    }
+  }
+
+  const showEditor = editingParam != null || (posts?.length ?? 0) === 0;
 
   return (
     <>
-      {/* Show posts list only when not editing */}
-      {!editingId && (
+      {!editingParam && (
         <div className="mb-8">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-xl font-semibold">All Posts</h2>
@@ -75,14 +136,14 @@ export default function PostsAdmin() {
             </Link>
           </div>
           <div className="grid gap-2 w-full">
-            {posts.map((p) => (
+            {(posts ?? []).map((p) => (
               <div
                 key={p.id}
                 className="flex items-center justify-between border rounded-md p-3 w-full"
               >
                 <div>
                   <div className="font-medium">{p.title}</div>
-                  <div className="text-xs text-muted-foreground">{p.id}</div>
+                  <div className="text-xs text-muted-foreground">/blog/{p.slug}</div>
                 </div>
                 <div className="flex gap-2">
                   <Link to={`?id=${p.id}`}>
@@ -96,18 +157,21 @@ export default function PostsAdmin() {
                 </div>
               </div>
             ))}
-            {!posts.length && <div className="text-sm text-muted-foreground">No posts yet.</div>}
+            {!posts?.length && (
+              <div className="text-sm text-muted-foreground">No posts yet.</div>
+            )}
           </div>
         </div>
       )}
 
-      {/* Full-width editor when creating/editing */}
-      {(editingId || (!editingId && posts.length === 0)) && (
+      {showEditor && (
         <div className="w-full max-w-none">
           <div className="mb-6 flex items-center justify-between">
             <h2 className="text-2xl font-bold">{editingId ? 'Edit Post' : 'New Post'}</h2>
             <div className="flex gap-3">
-              <Button onClick={save}>Save</Button>
+              <Button onClick={() => void save()} disabled={busy}>
+                {busy ? 'Saving…' : 'Save'}
+              </Button>
               <Button variant="outline" onClick={() => void navigate('/admin/posts')}>
                 {editingId ? 'Back to Posts' : 'Cancel'}
               </Button>
@@ -118,7 +182,6 @@ export default function PostsAdmin() {
             {/* Metadata sidebar */}
             <div className="xl:col-span-1 space-y-6">
               <div className="space-y-4">
-                {/* ID is backend-managed; slug auto-generated on save */}
                 <div>
                   <Label htmlFor="title">Title</Label>
                   <Input
@@ -131,29 +194,10 @@ export default function PostsAdmin() {
                   <Label htmlFor="description">Description</Label>
                   <Textarea
                     id="description"
-                    value={form.description}
-                    onChange={(e) => setForm({ ...form, description: e.target.value })}
+                    value={form.summary}
+                    onChange={(e) => setForm({ ...form, summary: e.target.value })}
                     rows={3}
                   />
-                </div>
-                <div className="grid grid-cols-1 gap-4">
-                  <div>
-                    <Label htmlFor="date">Date</Label>
-                    <Input
-                      id="date"
-                      type="date"
-                      value={form.date}
-                      onChange={(e) => setForm({ ...form, date: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="readTime">Read Time</Label>
-                    <Input
-                      id="readTime"
-                      value={form.readTime ?? ''}
-                      onChange={(e) => setForm({ ...form, readTime: e.target.value })}
-                    />
-                  </div>
                 </div>
                 <div>
                   <Label>Tags</Label>
@@ -185,10 +229,7 @@ export default function PostsAdmin() {
                         type="button"
                         className="text-xs px-2 py-1 rounded border hover:bg-destructive hover:text-destructive-foreground"
                         onClick={() =>
-                          setForm({
-                            ...form,
-                            tags: form.tags.filter((x) => x !== t),
-                          })
+                          setForm({ ...form, tags: form.tags.filter((x) => x !== t) })
                         }
                         title="Remove"
                       >
@@ -198,20 +239,29 @@ export default function PostsAdmin() {
                   </div>
                 </div>
                 <div>
-                  <Label htmlFor="image">Image URL</Label>
+                  <Label htmlFor="image">Featured Image</Label>
                   <Input
                     id="image"
-                    value={form.image ?? ''}
-                    onChange={(e) => setForm({ ...form, image: e.target.value })}
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => void onImagePicked(e.target.files)}
                   />
+                  {form.featured_image && (
+                    <img
+                      src={form.featured_image}
+                      alt="cover preview"
+                      className="mt-2 h-24 w-full object-cover rounded border"
+                    />
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* Main content editor */}
+            {/* Editor.js content editor */}
             <div className="xl:col-span-3">
-              <div className="h-[calc(100vh-12rem)]">
+              <div className="h-[calc(100vh-12rem)] overflow-auto border rounded-md p-4 bg-card">
                 <Label className="text-lg font-semibold mb-4 block">Content</Label>
+                <div ref={holderRef} />
               </div>
             </div>
           </div>
