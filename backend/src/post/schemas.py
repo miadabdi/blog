@@ -50,6 +50,7 @@ class PostPublic(BaseModel):
     featured_image: str
     slug: str
     published_at: datetime | None
+    created_at: datetime
     view_count: int
     categories: list[CategoryPublic] | None
     tags: list[TagPublic] | None

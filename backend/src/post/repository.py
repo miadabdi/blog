@@ -5,6 +5,8 @@ Handles direct database operations for Post entities.
 
 from functools import lru_cache
 
+from sqlmodel import select
+
 from ..common.generic_repository import GenericRepository
 from .models import Post
 
@@ -16,6 +18,26 @@ class PostRepository(GenericRepository[Post]):
 
     def __init__(self):
         super().__init__(Post)
+
+    async def get_all(self, session) -> list[Post]:
+        """
+        Get all posts, newest first.
+        """
+        return list(
+            (
+                await session.exec(
+                    select(self.model).order_by(self.model.created_at.desc())
+                )
+            ).all()
+        )
+
+    async def get_by_slug(self, slug: str, session) -> Post | None:
+        """
+        Get a post by its slug.
+        """
+        return (
+            await session.exec(select(self.model).where(self.model.slug == slug))
+        ).first()
 
     async def update_with_m2m(
         self,

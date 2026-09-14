@@ -427,6 +427,63 @@ class StorageService:
 
     @_handle_sync
     @_handle_storage_errors
+    def put_object(
+        self,
+        bucket_name: str,
+        object_name: str,
+        file_stream,
+        length: int,
+        content_type: str | None = None,
+    ) -> Dict[str, Any]:
+        """
+        Store an object from a file stream.
+
+        Args:
+            bucket_name (str): Name of the bucket.
+            object_name (str): Name of the object.
+            file_stream: Binary stream of the file content.
+            length (int): Size of the content in bytes.
+            content_type (str | None): MIME type of the content.
+
+        Returns:
+            Dict[str, Any]: Stored object metadata.
+        """
+        self.client.put_object(
+            bucket_name,
+            object_name,
+            file_stream,
+            length,
+            content_type=content_type or "application/octet-stream",
+        )
+        stat = self.client.stat_object(bucket_name, object_name)
+        return {
+            "object_name": object_name,
+            "bucket_name": bucket_name,
+            "content_type": stat.content_type,
+            "size": stat.size,
+        }
+
+    @_handle_sync
+    @_handle_storage_errors
+    def get_object_stream(self, bucket_name: str, object_name: str):
+        """
+        Open an object for streaming.
+
+        Args:
+            bucket_name (str): Name of the bucket.
+            object_name (str): Name of the object.
+
+        Returns:
+            tuple: (response stream, stat metadata).
+
+        Raises:
+            EntityNotFoundException: If the object does not exist.
+        """
+        stat = self.client.stat_object(bucket_name, object_name)
+        return self.client.get_object(bucket_name, object_name), stat
+
+    @_handle_sync
+    @_handle_storage_errors
     def create_presigned_put_upload_url(
         self,
         bucket_name: str,

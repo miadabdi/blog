@@ -9,6 +9,7 @@ from ..common.user_role import UserRole
 
 if TYPE_CHECKING:
     from ..post.models import Post  # Avoid circular import issues
+    from ..project.models import Project
 
 
 class User(GenericModel, table=True):
@@ -36,3 +37,10 @@ class User(GenericModel, table=True):
             "lazy": "noload",
         },
     )  # posts: List of posts authored by the user.
+
+    projects: list["Project"] = Relationship(
+        back_populates="author",
+        sa_relationship_kwargs={
+            "lazy": "noload",
+        },
+    )  # projects: List of projects authored by the user.

@@ -120,6 +120,57 @@ async def update_post(
 
 
 @router.get(
+    "/",
+    response_model=SuccessResult[list[PostPublic]],
+    responses={
+        **ResponseSuccessDoc.HTTP_200_OK("Posts fetched successfully", list[PostPublic]),
+        **ResponseErrorDoc.HTTP_500_INTERNAL_SERVER_ERROR(),
+    },
+)
+async def get_all_posts(
+    session: AsyncSessionDep, service: PostServiceDep, request: Request
+):
+    """
+    Retrieve all posts, newest first.
+    """
+    posts = await service.get_all_posts(session)
+    public_posts = [PostPublic.model_validate(post) for post in posts]
+    result = SuccessResult[list[PostPublic]](
+        code=SuccessCodes.SUCCESS,
+        message="Posts fetched successfully",
+        status_code=status.HTTP_200_OK,
+        data=public_posts,
+    )
+    return result.to_json_response(request)
+
+
+@router.get(
+    "/slug/{slug}",
+    response_model=SuccessResult[PostPublic],
+    responses={
+        **ResponseSuccessDoc.HTTP_200_OK("Post fetched successfully", PostPublic),
+        **ResponseErrorDoc.HTTP_500_INTERNAL_SERVER_ERROR(),
+        **ResponseErrorDoc.HTTP_404_NOT_FOUND(),
+    },
+)
+async def get_post_by_slug(
+    slug: str, session: AsyncSessionDep, service: PostServiceDep, request: Request
+):
+    """
+    Retrieve a post by its slug.
+    """
+    post = await service.get_post_by_slug(slug, session)
+    public_post = PostPublic.model_validate(post)
+    result = SuccessResult[PostPublic](
+        code=SuccessCodes.SUCCESS,
+        message="Post fetched successfully",
+        status_code=status.HTTP_200_OK,
+        data=public_post,
+    )
+    return result.to_json_response(request)
+
+
+@router.get(
     "/{post_id}",
     response_model=SuccessResult[PostPublic],
     responses={

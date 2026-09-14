@@ -3,6 +3,7 @@ Service layer for Post operations.
 Handles business logic and error handling for post CRUD operations.
 """
 
+from datetime import datetime, timezone
 from functools import lru_cache
 from typing import Annotated
 
@@ -80,6 +81,7 @@ class PostService:
                 {
                     **data.model_dump(),
                     "author_id": current_user.id,
+                    "published_at": datetime.now(timezone.utc).replace(tzinfo=None),
                     "categories": categories,
                     "tags": tags,
                 },
@@ -155,6 +157,8 @@ class PostService:
                 field="title",
                 value=update_data.title,
             )
+        except EntityNotFoundException:
+            raise
         except Exception as e:
             raise InternalException(
                 message="An unexpected error occurred while updating the post.",
@@ -195,6 +199,33 @@ class PostService:
 
         if result is None:
             raise EntityNotFoundException(Post.__name__, str(id))
+
+        return result
+
+    async def get_all_posts(self, session: AsyncSession) -> list[Post]:
+        """
+        Retrieve all posts, newest first.
+        """
+        return await self.repository.get_all(session)
+
+    async def get_post_by_slug(self, slug: str, session: AsyncSession) -> Post:
+        """
+        Retrieve a post by its slug.
+
+        Args:
+            slug (str): Slug of the post.
+            session (AsyncSession): Database session.
+
+        Returns:
+            Post: The found post instance.
+
+        Raises:
+            EntityNotFoundException: If the post does not exist.
+        """
+        result = await self.repository.get_by_slug(slug, session)
+
+        if result is None:
+            raise EntityNotFoundException(Post.__name__, slug)
 
         return result
 

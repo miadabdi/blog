@@ -15,6 +15,7 @@ from src.auth.models import *
 from src.category.models import *
 from src.comment.models import *
 from src.post.models import *
+from src.project.models import *
 from src.tag.models import *
 
 load_dotenv()  # This loads .env from current directory

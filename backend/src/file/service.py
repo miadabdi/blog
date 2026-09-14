@@ -1,6 +1,6 @@
 """
-Service layer for file operations using MinIO.
-Handles business logic for generating presigned URLs for uploads and downloads.
+Service layer for file operations using S3-compatible storage.
+Handles business logic for uploads, object streaming, and presigned URLs.
 """
 
 import uuid
@@ -8,8 +8,10 @@ from datetime import datetime, timedelta, timezone
 from functools import lru_cache
 from typing import Annotated
 
-from fastapi import Depends
+from fastapi import Depends, UploadFile
 
+from ..common.exceptions.exceptions import EntityNotFoundException
+from ..common.settings import settings
 from .storage import StorageService, get_StorageService
 
 
@@ -101,6 +103,47 @@ class FileService:
             bucket_name=bucket_name,
             object_name=object_name,
             expires=timedelta(seconds=expires_seconds),
+        )
+
+    async def upload_file(self, file: UploadFile, bucket_name: str) -> dict:
+        """
+        Store an uploaded file in the given bucket.
+
+        Args:
+            file (UploadFile): The uploaded file.
+            bucket_name (str): Target bucket (must be a configured bucket).
+
+        Returns:
+            dict: Stored object metadata.
+
+        Raises:
+            EntityNotFoundException: If the bucket is not a configured bucket.
+        """
+        if bucket_name not in settings.S3_BUCKET_NAMES:
+            raise EntityNotFoundException(resource="Bucket", resource_id=bucket_name)
+
+        object_name = self._generate_unique_object_name(file.filename or "upload")
+        return await self.minio.put_object(
+            bucket_name=bucket_name,
+            object_name=object_name,
+            file_stream=file.file,
+            length=file.size,
+            content_type=file.content_type,
+        )
+
+    async def open_object(self, bucket_name: str, object_name: str):
+        """
+        Open a stored object for streaming.
+
+        Args:
+            bucket_name (str): The bucket name.
+            object_name (str): The object name.
+
+        Returns:
+            tuple: (response stream, stat metadata).
+        """
+        return await self.minio.get_object_stream(
+            bucket_name=bucket_name, object_name=object_name
         )
 
 
